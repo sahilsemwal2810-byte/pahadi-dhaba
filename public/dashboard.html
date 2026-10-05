@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchen & Counter Dashboard</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #334155;
+      margin-bottom: 24px;
+    }
+    .brand {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f97316;
+    }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      background: #1e293b;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid #475569;
+    }
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 18px;
+    }
+    .order-card {
+      background: #1e293b;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px dashed #475569;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .table-tag {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #facc15;
+    }
+    .order-time {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+    .items-list {
+      list-style: none;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.05rem;
+    }
+    .item-qty {
+      font-weight: bold;
+      color: #38bdf8;
+      margin-right: 8px;
+    }
+    .card-bottom {
+      border-top: 1px solid #334155;
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .total-price {
+      font-size: 1.15rem;
+      font-weight: bold;
+      color: #4ade80;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .btn-print {
+      background: #64748b;
+      color: white;
+    }
+    .btn-done {
+      background: #22c55e;
+      color: white;
+    }
+
+    /* थर्मल प्रिंटर (58mm KOT) स्टाइल */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printArea, #printArea * {
+        visibility: visible;
+      }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 58mm;
+        color: #000;
+        background: #fff;
+        font-family: monospace;
+        padding: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- हेडर -->
+  <header>
+    <div class="brand">पहाड़ी ढाबा - लाइव किचन डैशबोर्ड</div>
+    <div class="status-badge">
+      <div class="live-dot"></div>
+      <span>लाइव कनेक्टेड</span>
+    </div>
+  </header>
+
+  <!-- लाइव ऑर्डर्स ग्रिड -->
+  <div class="grid" id="ordersGrid">
+    <div style="grid-column: 1/-1; text-align: center; color: #64748b; padding: 40px;">
+      नए ऑर्डर्स की प्रतीक्षा है...
+    </div>
+  </div>
+
+  <!-- थर्मल KOT प्रिंटिंग कंटेनर -->
+  <div id="printArea" style="display: none;"></div>
+
+  <script> 
+  // 1. चेक करें कि होटल लॉगिन है या नहीं
+  const restaurantId = sessionStorage.getItem('restaurant_id');
+  const restaurantName = sessionStorage.getItem('restaurant_name');
+
+  // अगर लॉगिन नहीं है तो सीधे लॉगिन पेज पर भेज दें
+  if (!restaurantId) {
+    window.location.href = '/login.html';
+  }
+
+  // हेडर पर होटल का नाम सेट करना
+  const headerBrand = document.querySelector('.brand');
+  if (headerBrand && restaurantName) {
+    headerBrand.innerText = `${restaurantName} - लाइव किचन डैशबोर्ड`;
+  }
+    const socket = io();
+socket.emit('join_restaurant', restaurantId);
+
+    // बीप साउंड जेनरेटर (Web Audio API)
+    function playBeep() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // 880Hz बीप
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) {
+        console.log("Audio not supported");
+      }
+    }
+
+    // नया ऑर्डर आने पर हैंडलर
+    socket.on('new_order', (order) => {
+      playBeep();
+      addOrderCard(order);
+      printKOT(order);
+    });
+
+    let hasOrders = false;
+
+    function addOrderCard(order) {
+      const grid = document.getElementById('ordersGrid');
+      if (!hasOrders) {
+        grid.innerHTML = "";
+        hasOrders = true;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'order-card';
+      card.id = `order-${order.id}`;
+
+      let itemsHtml = '';
+      order.items.forEach(item => {
+        itemsHtml += `
+          <li class="item-row">
+            <span><span class="item-qty">${item.quantity}x</span> ${item.name}</span>
+            <span>₹${item.price * item.quantity}</span>
+          </li>
+        `;
+      });
+
+      card.innerHTML = `
+        <div>
+          <div class="card-top">
+            <span class="table-tag">टेबल: ${order.table_no}</span>
+            <span class="order-time">${order.time || 'अभी'} | #${order.id}</span>
+          </div>
+          <ul class="items-list">
+            ${itemsHtml}
+          </ul>
+        </div>
+        <div class="card-bottom">
+          <div class="total-price">₹${order.total_amount}</div>
+          <div class="btn-group">
+            <button class="btn btn-print" onclick='printKOT(${JSON.stringify(order)})'>🖨️ पर्ची</button>
+            <button class="btn btn-done" onclick="completeOrder(${order.id})">✓ पूरा हुआ</button>
+          </div>
+        </div>
+      `;
+
+      grid.prepend(card);
+    }
+
+    // 58mm KOT थर्मल पर्ची प्रिंट
+    function printKOT(order) {
+      const printBox = document.getElementById('printArea');
+      printBox.style.display = 'block';
+
+      let itemsText = '';
+      order.items.forEach(item => {
+        itemsText += `
+          <div style="display:flex; justify-content:space-between; margin: 3px 0;">
+            <span>${item.quantity}x ${item.name}</span>
+            <span>₹${item.price * item.quantity}</span>
+          </div>
+        `;
+      });
+
+      printBox.innerHTML = `
+        <div style="text-align:center; font-weight:bold; font-size:16px;">पहाड़ी ढाबा</div>
+        <div style="text-align:center; margin-bottom: 5px;">--- KOT पर्ची ---</div>
+        <div><strong>टेबल नं:</strong> ${order.table_no}</div>
+        <div><strong>ऑर्डर ID:</strong> #${order.id}</div>
+        <div><strong>समय:</strong> ${order.time || new Date().toLocaleTimeString()}</div>
+        <hr style="border:none; border-top:1px dashed #000; margin: 6px 0;" />
+        ${itemsText}
+        <hr style="border:none; border-top:1px dashed #000; margin: 6px 0;" />
+        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px;">
+          <span>कुल राशि:</span>
+          <span>₹${order.total_amount}</span>
+        </div>
+        <div style="text-align:center; margin-top:8px; font-size:11px;">धन्यवाद! पुनः पधारें</div>
+      `;
+
+      window.print();
+      printBox.style.display = 'none';
+    }
+
+    function completeOrder(orderId) {
+      const card = document.getElementById(`order-${orderId}`);
+      if (card) {
+        card.style.opacity = '0.4';
+        card.style.border = '1px solid #475569';
+        setTimeout(() => card.remove(), 400);
+      }
+    }
+  </script>
+</body>
+</html>

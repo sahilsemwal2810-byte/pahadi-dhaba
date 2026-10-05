@@ -1,0 +1,157 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background-color: #f7f8fa;
+  color: #333;
+  padding-bottom: 90px;
+}
+
+header {
+  background: #ffffff;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.restaurant-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #e63946;
+}
+
+.table-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  background: #e9ecef;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #495057;
+  font-weight: 600;
+}
+
+.menu-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.item-info {
+  flex: 1;
+  padding-right: 12px;
+}
+
+.item-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.item-price {
+  font-size: 0.95rem;
+  color: #2b9348;
+  font-weight: bold;
+}
+
+.add-btn {
+  background-color: #e63946;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.add-btn:active {
+  transform: scale(0.96);
+}
+
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qty-btn {
+  background: #e9ecef;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.cart-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #e9ecef;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.order-btn {
+  background-color: #2b9348;
+  color: white;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.order-btn:disabled {
+  background-color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.success-popup {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 200;
+}
+
+.popup-card {
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+}

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart QR Menu</title>
+  <link rel="stylesheet" href="menu.css" />
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+  <!-- हेडर -->
+  <header>
+    <div class="restaurant-title" id="restName">पहाड़ी ढाबा</div>
+    <div class="table-badge" id="tableBadge">टेबल: --</div>
+  </header>
+
+  <!-- मेनू लिस्ट -->
+  <div class="menu-container" id="menuContainer">
+    <p style="text-align:center; color:#888;">मेनू लोड हो रहा है...</p>
+  </div>
+
+  <!-- नीचे की कार्ट बार -->
+  <div class="cart-bar">
+    <div>
+      <div style="font-size: 0.8rem; color: #666;">कुल बिल:</div>
+      <div style="font-size: 1.2rem; font-weight: bold; color: #2b9348;" id="totalPrice">₹0</div>
+    </div>
+    <button class="order-btn" id="orderBtn" onclick="placeOrder()" disabled>ऑर्डर भेजें (0)</button>
+  </div>
+
+  <!-- ऑर्डर सफलता पॉपअप -->
+  <div class="success-popup" id="successPopup">
+    <div class="popup-card">
+      <h2 style="color: #2b9348; margin-bottom: 8px;">ऑर्डर लग गया! 🎉</h2>
+      <p style="color: #555; font-size: 0.95rem; margin-bottom: 16px;">आपका ऑर्डर काउंटर और किचन को भेज दिया गया है।</p>
+      <button class="add-btn" style="width: 100%;" onclick="closePopup()">ठीक है</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    // URL से ढाबा और टेबल नंबर निकालें (?restaurant=1&table=1)
+    const urlParams = new URLSearchParams(window.location.search);
+    const restaurantId = urlParams.get('restaurant') || 1;
+    const tableNo = urlParams.get('table') || '1';
+
+    document.getElementById('tableBadge').innerText = `टेबल: ${tableNo}`;
+
+    let menuList = [];
+    let cart = {};
+
+    // सर्वर से मेनू लोड करना
+    async function fetchMenu() {
+      try {
+        const res = await fetch(`/api/menu?restaurant=${restaurantId}`);
+        const data = await res.json();
+        menuList = data;
+        
+        if (data.restaurantName) {
+          document.getElementById('restName').innerText = data.restaurantName;
+        }
+        renderMenu();
+      } catch (err) {
+        document.getElementById('menuContainer').innerHTML = "<p style='color:red; text-align:center;'>मेनू लोड नहीं हो पाया!</p>";
+      }
+    }
+
+    // मेनू को स्क्रीन पर दिखाना
+    function renderMenu() {
+      const container = document.getElementById('menuContainer');
+      container.innerHTML = "";
+
+      if (!menuList || menuList.length === 0) {
+        container.innerHTML = "<p style='text-align:center;'>मेनू खाली है।</p>";
+        return;
+      }
+
+      menuList.forEach(item => {
+        const qty = cart[item.id] || 0;
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="item-info">
+            <div class="item-name">${item.name}</div>
+            <div class="item-price">₹${item.price}</div>
+          </div>
+          <div>
+            ${qty === 0 
+              ? `<button class="add-btn" onclick="addToCart(${item.id})">+ जोड़ें</button>`
+              : `<div class="qty-controls">
+                  <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+                  <span style="font-weight:bold;">${qty}</span>
+                  <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+                </div>`
+            }
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      updateCartBar();
+    }
+
+    function addToCart(id) {
+      cart[id] = 1;
+      renderMenu();
+    }
+
+    function changeQty(id, delta) {
+      if (!cart[id]) return;
+      cart[id] += delta;
+      if (cart[id] <= 0) delete cart[id];
+      renderMenu();
+    }
+
+    function updateCartBar() {
+      let total = 0;
+      let count = 0;
+      for (const id in cart) {
+        const item = menuList.find(i => i.id == id);
+        if (item) {
+          total += item.price * cart[id];
+          count += cart[id];
+        }
+      }
+      document.getElementById('totalPrice').innerText = `₹${total}`;
+      const btn = document.getElementById('orderBtn');
+      btn.innerText = `ऑर्डर भेजें (${count})`;
+      btn.disabled = count === 0;
+    }
+
+    // काउंटर पर ऑर्डर भेजना
+    async function placeOrder() {
+      const orderItems = [];
+      let totalAmount = 0;
+
+      for (const id in cart) {
+        const item = menuList.find(i => i.id == id);
+        if (item) {
+          orderItems.push({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: cart[id]
+          });
+          totalAmount += item.price * cart[id];
+        }
+      }
+
+      const orderData = {
+        restaurant_id: Number(restaurantId),
+        table_no: tableNo,
+        items: orderItems,
+        total_amount: totalAmount
+      };
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData)
+        });
+
+        if (res.ok) {
+          cart = {};
+          renderMenu();
+          document.getElementById('successPopup').style.display = 'flex';
+        } else {
+          alert('ऑर्डर भेजने में समस्या आई!');
+        }
+      } catch (err) {
+        alert('सर्वर से कनेक्ट नहीं हो सका!');
+      }
+    }
+
+    function closePopup() {
+      document.getElementById('successPopup').style.display = 'none';
+    }
+
+    fetchMenu();
+  </script>
+</body>
+</html>

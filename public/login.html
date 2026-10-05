@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>होटल पोर्टल लॉगिन</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    body { background: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .card { background: #1e293b; padding: 32px 24px; border-radius: 12px; width: 100%; max-width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); text-align: center; }
+    h2 { color: #38bdf8; margin-bottom: 20px; font-size: 1.4rem; }
+    input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; outline: none; }
+    input:focus { border-color: #38bdf8; }
+    button { width: 100%; padding: 12px; background: #22c55e; border: none; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 1rem; color: #000; margin-top: 10px; }
+    button:hover { background: #16a34a; }
+    #err { color: #ef4444; font-size: 0.85rem; margin-top: 12px; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>🍽️ होटल / ढाबा लॉगिन</h2>
+    <input type="number" id="rid" placeholder="Restaurant ID (जैसे: 1 या 2)">
+    <input type="password" id="rpass" placeholder="पासवर्ड">
+    <button onclick="login()">डैशबोर्ड खोलें</button>
+    <p id="err"></p>
+  </div>
+
+  <script>
+    function login() {
+      const id = document.getElementById('rid').value;
+      const pass = document.getElementById('rpass').value;
+      const err = document.getElementById('err');
+
+      if (!id || !pass) {
+        err.innerText = "कृपया ID और पासवर्ड दोनों भरें!";
+        err.style.display = "block";
+        return;
+      }
+
+      fetch('/api/restaurant/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_id: id, password: pass })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // सेशन में ID और नाम सुरक्षित रखना
+          sessionStorage.setItem('restaurant_id', data.restaurant.id);
+          sessionStorage.setItem('restaurant_name', data.restaurant.name);
+          window.location.href = '/dashboard.html';
+        } else {
+          err.innerText = data.message || "लॉगिन असफल!";
+          err.style.display = "block";
+        }
+      })
+      .catch(() => {
+        err.innerText = "सर्वर से संपर्क नहीं हो सका!";
+        err.style.display = "block";
+      });
+    }
+  </script>
+</body>
+</html>

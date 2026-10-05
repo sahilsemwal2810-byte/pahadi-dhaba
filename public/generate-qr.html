@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <title>होटल QR कोड जनरेटर</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #0f172a; color: #fff; padding: 20px; text-align: center; }
+    .controls { background: #1e293b; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 20px; }
+    select, button { padding: 10px 15px; font-size: 1rem; border-radius: 6px; border: none; margin: 5px; }
+    select { background: #334155; color: #fff; }
+    button { background: #22c55e; color: #000; font-weight: bold; cursor: pointer; }
+    .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+    .card { background: #fff; color: #000; padding: 15px; border-radius: 10px; width: 180px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .card h3 { margin: 5px 0; font-size: 1rem; color: #1e293b; }
+    .card p { margin: 2px 0 10px 0; font-size: 0.85rem; color: #64748b; }
+    .qr-box { display: flex; justify-content: center; }
+  </style>
+</head>
+<body>
+
+  <h1>📱 मल्टी-होटल टेबल QR कोड जनरेटर</h1>
+
+  <div class="controls">
+    <label>होटल चुनें: </label>
+    <select id="hotelSelect">
+      <option value="1">होटल 1 (पहाड़ी ढाबा)</option>
+      <option value="2">होटल 2 (शिवालिक रेस्टोरेंट)</option>
+      
+    </select>
+    <button onclick="renderQRCodes()">QR कोड दिखाएँ</button>
+  </div>
+
+  <div class="grid" id="qrContainer"></div>
+
+  <script>
+    const baseUrl = window.location.origin;
+    const totalTables = 10;
+
+    function renderQRCodes() {
+      const hotelSelect = document.getElementById('hotelSelect');
+      const restaurantId = hotelSelect.value;
+      const restaurantName = hotelSelect.options[hotelSelect.selectedIndex].text;
+      const container = document.getElementById('qrContainer');
+      
+      container.innerHTML = ""; // पुराना साफ़ करें
+
+      for (let table = 1; table <= totalTables; table++) {
+        const targetUrl = `${baseUrl}/menu.html?restaurant=${restaurantId}&table=${table}`;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const title = document.createElement('h3');
+        title.innerText = restaurantName;
+
+        const tableText = document.createElement('p');
+        tableText.innerText = `टेबल नंबर: ${table}`;
+
+        const qrDiv = document.createElement('div');
+        qrDiv.className = 'qr-box';
+
+        card.appendChild(title);
+        card.appendChild(tableText);
+        card.appendChild(qrDiv);
+        container.appendChild(card);
+
+        new QRCode(qrDiv, {
+          text: targetUrl,
+          width: 140,
+          height: 140
+        });
+      }
+    }
+
+    // पेज खुलते ही होटल 1 लोड होगा
+    renderQRCodes();
+  </script>
+</body>
+</html>
