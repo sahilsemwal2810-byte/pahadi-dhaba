@@ -44,9 +44,10 @@
     // URL से ढाबा और टेबल नंबर निकालें (?restaurant=1&table=1)
     const urlParams = new URLSearchParams(window.location.search);
     const restaurantId = urlParams.get('restaurant') || 1;
-    const tableNo = urlParams.get('table') || '1';
+    const tableNo = (urlParams.get('table') || '1').slice(0, 10);
+    const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-    document.getElementById('tableBadge').innerText = `टेबल: ${tableNo}`;
+    document.getElementById('tableBadge').textContent = `टेबल: ${tableNo}`;
 
     let menuList = [];
     let cart = {};
@@ -56,10 +57,9 @@
       try {
         const res = await fetch(`/api/menu?restaurant=${restaurantId}`);
         const data = await res.json();
-        menuList = data;
-        
+        menuList = data.items || [];
         if (data.restaurantName) {
-          document.getElementById('restName').innerText = data.restaurantName;
+          document.getElementById('restName').textContent = data.restaurantName;
         }
         renderMenu();
       } catch (err) {
@@ -83,7 +83,7 @@
         card.className = 'card';
         card.innerHTML = `
           <div class="item-info">
-            <div class="item-name">${item.name}</div>
+            <div class="item-name">${esc(item.name)}</div>
             <div class="item-price">₹${item.price}</div>
           </div>
           <div>
@@ -132,7 +132,11 @@
     }
 
     // काउंटर पर ऑर्डर भेजना
+    let sending = false;
     async function placeOrder() {
+      if (sending) return;
+      sending = true;
+      document.getElementById('orderBtn').disabled = true;
       const orderItems = [];
       let totalAmount = 0;
 
@@ -172,6 +176,9 @@
         }
       } catch (err) {
         alert('सर्वर से कनेक्ट नहीं हो सका!');
+      } finally {
+        sending = false;
+        updateCartBar();
       }
     }
 
