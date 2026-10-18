@@ -99,8 +99,8 @@ app.post('/api/orders', async (req, res) => {
       [restaurantId, tableNo, total, 'Pending']);
     const orderId = result.insertId;
 
-    await dbp.query('INSERT INTO order_items (order_id, item_id, quantity, price) VALUES ?',
-      [items.map((i) => [orderId, i.id, i.quantity, i.price])]);
+    await dbp.query('INSERT INTO order_items (order_id, item_name, quantity, price) VALUES ?',
+  [items.map((i) => [orderId, i.name, i.quantity, i.price])]);
 
     io.to(`restaurant_${restaurantId}`).emit('new_order', {
       id: orderId, table_no: tableNo, items, total_amount: total, time: istTime()
@@ -119,14 +119,13 @@ app.get('/api/orders/pending', async (req, res) => {
   if (!rid) return res.status(400).json({ error: 'restaurant required' });
   try {
     const [rows] = await dbp.query(
-      `SELECT o.id, o.table_no, o.total_amount, o.created_at,
-              oi.quantity, oi.price, m.name
+            `SELECT o.id, o.table_no, o.total_amount, o.created_at,
+              oi.quantity, oi.price, oi.item_name AS name
        FROM orders o
        JOIN order_items oi ON oi.order_id = o.id
-       JOIN menu_items m ON m.id = oi.item_id
        WHERE o.restaurant_id = ? AND o.status = 'Pending'
        ORDER BY o.id ASC`, [rid]);
-
+       
     const map = new Map();
     for (const r of rows) {
       if (!map.has(r.id)) {
