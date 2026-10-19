@@ -5,108 +5,144 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Smart QR Menu</title>
   <link rel="stylesheet" href="menu.css" />
-  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    .head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .langs { display: flex; gap: 6px; }
+    .lang-btn { border: 1px solid #ced4da; background: #fff; color: #495057; padding: 5px 10px; border-radius: 16px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .lang-btn.active { background: #e63946; border-color: #e63946; color: #fff; }
+  </style>
 </head>
 <body>
 
-  <!-- हेडर -->
   <header>
-    <div class="restaurant-title" id="restName">पहाड़ी ढाबा</div>
-    <div class="table-badge" id="tableBadge">टेबल: --</div>
+    <div class="head-row">
+      <div>
+        <div class="restaurant-title" id="restName"></div>
+        <div class="table-badge" id="tableBadge"></div>
+      </div>
+      <div class="langs">
+        <button class="lang-btn" data-lang="hi">हिंदी</button>
+        <button class="lang-btn" data-lang="en">English</button>
+        <button class="lang-btn" data-lang="pa">ਪੰਜਾਬੀ</button>
+      </div>
+    </div>
   </header>
 
-  <!-- मेनू लिस्ट -->
-  <div class="menu-container" id="menuContainer">
-    <p style="text-align:center; color:#888;">मेनू लोड हो रहा है...</p>
-  </div>
+  <div class="menu-container" id="menuContainer"></div>
 
-  <!-- नीचे की कार्ट बार -->
   <div class="cart-bar">
     <div>
-      <div style="font-size: 0.8rem; color: #666;">कुल बिल:</div>
+      <div style="font-size: 0.8rem; color: #666;" data-i18n="total"></div>
       <div style="font-size: 1.2rem; font-weight: bold; color: #2b9348;" id="totalPrice">₹0</div>
     </div>
-    <button class="order-btn" id="orderBtn" onclick="placeOrder()" disabled>ऑर्डर भेजें (0)</button>
+    <button class="order-btn" id="orderBtn" onclick="placeOrder()" disabled></button>
   </div>
 
-  <!-- ऑर्डर सफलता पॉपअप -->
   <div class="success-popup" id="successPopup">
     <div class="popup-card">
-      <h2 style="color: #2b9348; margin-bottom: 8px;">ऑर्डर लग गया! 🎉</h2>
-      <p style="color: #555; font-size: 0.95rem; margin-bottom: 16px;">आपका ऑर्डर काउंटर और किचन को भेज दिया गया है।</p>
-      <button class="add-btn" style="width: 100%;" onclick="closePopup()">ठीक है</button>
+      <h2 style="color: #2b9348; margin-bottom: 8px;" data-i18n="placed"></h2>
+      <p style="color: #555; font-size: 0.95rem; margin-bottom: 16px;" data-i18n="sent"></p>
+      <button class="add-btn" style="width: 100%;" onclick="closePopup()" data-i18n="ok"></button>
     </div>
   </div>
 
   <script>
-    const socket = io();
+    const I18N = {
+      hi: { table: 'टेबल', total: 'कुल बिल:', order: 'ऑर्डर भेजें', add: '+ जोड़ें', ok: 'ठीक है',
+            placed: 'ऑर्डर लग गया! 🎉', sent: 'आपका ऑर्डर काउंटर और किचन को भेज दिया गया है।',
+            loading: 'मेनू लोड हो रहा है...', empty: 'मेनू खाली है।', failMenu: 'मेनू लोड नहीं हो पाया!',
+            failOrder: 'ऑर्डर भेजने में समस्या आई!', failServer: 'सर्वर से कनेक्ट नहीं हो सका!' },
+      en: { table: 'Table', total: 'Total bill:', order: 'Place order', add: '+ Add', ok: 'OK',
+            placed: 'Order placed! 🎉', sent: 'Your order has been sent to the counter and kitchen.',
+            loading: 'Loading menu...', empty: 'Menu is empty.', failMenu: 'Could not load the menu!',
+            failOrder: 'There was a problem placing the order!', failServer: 'Could not connect to the server!' },
+      pa: { table: 'ਮੇਜ਼', total: 'ਕੁੱਲ ਬਿੱਲ:', order: 'ਆਰਡਰ ਭੇਜੋ', add: '+ ਜੋੜੋ', ok: 'ਠੀਕ ਹੈ',
+            placed: 'ਆਰਡਰ ਲੱਗ ਗਿਆ! 🎉', sent: 'ਤੁਹਾਡਾ ਆਰਡਰ ਕਾਊਂਟਰ ਅਤੇ ਰਸੋਈ ਨੂੰ ਭੇਜ ਦਿੱਤਾ ਗਿਆ ਹੈ।',
+            loading: 'ਮੀਨੂ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...', empty: 'ਮੀਨੂ ਖਾਲੀ ਹੈ।', failMenu: 'ਮੀਨੂ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ!',
+            failOrder: 'ਆਰਡਰ ਭੇਜਣ ਵਿੱਚ ਸਮੱਸਿਆ ਆਈ!', failServer: 'ਸਰਵਰ ਨਾਲ ਜੁੜ ਨਹੀਂ ਸਕੇ!' }
+    };
 
-    // URL से ढाबा और टेबल नंबर निकालें (?restaurant=1&table=1)
+    const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const urlParams = new URLSearchParams(window.location.search);
     const restaurantId = urlParams.get('restaurant') || 1;
     const tableNo = (urlParams.get('table') || '1').slice(0, 10);
-    const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-    document.getElementById('tableBadge').textContent = `टेबल: ${tableNo}`;
+    // भाषा: URL (?lang=pa) > पिछली चुनी हुई > हिंदी
+    let lang = urlParams.get('lang') || localStorage.getItem('menuLang') || 'hi';
+    if (!I18N[lang]) lang = 'hi';
+    const T = (k) => I18N[lang][k];
 
     let menuList = [];
     let cart = {};
+    let menuState = 'loading'; // loading | ok | error
 
-    // सर्वर से मेनू लोड करना
+    // डिश का नाम चुनी हुई भाषा में (खाली हो तो हिंदी नाम)
+    function dishName(item) {
+      if (lang === 'en' && item.name_en) return item.name_en;
+      if (lang === 'pa' && item.name_pa) return item.name_pa;
+      return item.name;
+    }
+
+    function applyLang() {
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = T(el.dataset.i18n); });
+      document.getElementById('tableBadge').textContent = `${T('table')}: ${tableNo}`;
+      document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
+      renderMenu();
+    }
+
+    document.querySelectorAll('.lang-btn').forEach((b) => {
+      b.addEventListener('click', () => {
+        lang = b.dataset.lang;
+        localStorage.setItem('menuLang', lang);
+        applyLang();
+      });
+    });
+
     async function fetchMenu() {
       try {
         const res = await fetch(`/api/menu?restaurant=${restaurantId}`);
         const data = await res.json();
         menuList = data.items || [];
-        if (data.restaurantName) {
-          document.getElementById('restName').textContent = data.restaurantName;
-        }
-        renderMenu();
+        if (data.restaurantName) document.getElementById('restName').textContent = data.restaurantName;
+        menuState = 'ok';
       } catch (err) {
-        document.getElementById('menuContainer').innerHTML = "<p style='color:red; text-align:center;'>मेनू लोड नहीं हो पाया!</p>";
+        menuState = 'error';
       }
+      renderMenu();
     }
 
-    // मेनू को स्क्रीन पर दिखाना
     function renderMenu() {
       const container = document.getElementById('menuContainer');
-      container.innerHTML = "";
+      if (menuState === 'loading') { container.innerHTML = `<p style="text-align:center;color:#888;">${T('loading')}</p>`; updateCartBar(); return; }
+      if (menuState === 'error') { container.innerHTML = `<p style="color:red;text-align:center;">${T('failMenu')}</p>`; return; }
+      if (menuList.length === 0) { container.innerHTML = `<p style="text-align:center;">${T('empty')}</p>`; updateCartBar(); return; }
 
-      if (!menuList || menuList.length === 0) {
-        container.innerHTML = "<p style='text-align:center;'>मेनू खाली है।</p>";
-        return;
-      }
-
-      menuList.forEach(item => {
+      container.innerHTML = '';
+      menuList.forEach((item) => {
         const qty = cart[item.id] || 0;
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
           <div class="item-info">
-            <div class="item-name">${esc(item.name)}</div>
+            <div class="item-name">${esc(dishName(item))}</div>
             <div class="item-price">₹${item.price}</div>
           </div>
           <div>
-            ${qty === 0 
-              ? `<button class="add-btn" onclick="addToCart(${item.id})">+ जोड़ें</button>`
+            ${qty === 0
+              ? `<button class="add-btn" onclick="addToCart(${item.id})">${T('add')}</button>`
               : `<div class="qty-controls">
                   <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
                   <span style="font-weight:bold;">${qty}</span>
                   <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
-                </div>`
-            }
-          </div>
-        `;
+                </div>`}
+          </div>`;
         container.appendChild(card);
       });
-
       updateCartBar();
     }
 
-    function addToCart(id) {
-      cart[id] = 1;
-      renderMenu();
-    }
+    function addToCart(id) { cart[id] = 1; renderMenu(); }
 
     function changeQty(id, delta) {
       if (!cart[id]) return;
@@ -115,77 +151,58 @@
       renderMenu();
     }
 
+    let sending = false;
     function updateCartBar() {
-      let total = 0;
-      let count = 0;
+      let total = 0, count = 0;
       for (const id in cart) {
-        const item = menuList.find(i => i.id == id);
-        if (item) {
-          total += item.price * cart[id];
-          count += cart[id];
-        }
+        const item = menuList.find((i) => i.id == id);
+        if (item) { total += item.price * cart[id]; count += cart[id]; }
       }
-      document.getElementById('totalPrice').innerText = `₹${total}`;
+      document.getElementById('totalPrice').textContent = `₹${total}`;
       const btn = document.getElementById('orderBtn');
-      btn.innerText = `ऑर्डर भेजें (${count})`;
-      btn.disabled = count === 0;
+      btn.textContent = `${T('order')} (${count})`;
+      btn.disabled = count === 0 || sending;
     }
 
-    // काउंटर पर ऑर्डर भेजना
-    let sending = false;
     async function placeOrder() {
       if (sending) return;
       sending = true;
-      document.getElementById('orderBtn').disabled = true;
+      updateCartBar();
+
       const orderItems = [];
       let totalAmount = 0;
-
       for (const id in cart) {
-        const item = menuList.find(i => i.id == id);
+        const item = menuList.find((i) => i.id == id);
         if (item) {
-          orderItems.push({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: cart[id]
-          });
+          orderItems.push({ id: item.id, name: item.name, price: item.price, quantity: cart[id] });
           totalAmount += item.price * cart[id];
         }
       }
-
-      const orderData = {
-        restaurant_id: Number(restaurantId),
-        table_no: tableNo,
-        items: orderItems,
-        total_amount: totalAmount
-      };
 
       try {
         const res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(orderData)
+          body: JSON.stringify({ restaurant_id: Number(restaurantId), table_no: tableNo, items: orderItems, total_amount: totalAmount })
         });
-
         if (res.ok) {
           cart = {};
           renderMenu();
           document.getElementById('successPopup').style.display = 'flex';
         } else {
-          alert('ऑर्डर भेजने में समस्या आई!');
+          alert(T('failOrder'));
         }
       } catch (err) {
-        alert('सर्वर से कनेक्ट नहीं हो सका!');
+        alert(T('failServer'));
       } finally {
         sending = false;
         updateCartBar();
       }
     }
 
-    function closePopup() {
-      document.getElementById('successPopup').style.display = 'none';
-    }
+    function closePopup() { document.getElementById('successPopup').style.display = 'none'; }
 
+    applyLang();
     fetchMenu();
   </script>
 </body>
