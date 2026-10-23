@@ -6,215 +6,549 @@
   <title>Kitchen & Counter Dashboard</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #0f172a; color: #f8fafc; padding: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 2px solid #334155; margin-bottom: 24px; gap: 10px; flex-wrap: wrap; }
-    .brand { font-size: 1.5rem; font-weight: 700; color: #f97316; }
-    .head-right { display: flex; gap: 10px; align-items: center; }
-    .status-badge { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; background: #1e293b; padding: 6px 14px; border-radius: 20px; border: 1px solid #475569; }
-    .live-dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; }
-    .live-dot.off { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
-    .toggle { cursor: pointer; background: #1e293b; border: 1px solid #475569; color: #f8fafc; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
-    .order-card { background: #1e293b; border: 2px solid #3b82f6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: popIn 0.3s ease; }
-    @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .card-top { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px dashed #475569; padding-bottom: 10px; margin-bottom: 12px; }
-    .table-tag { font-size: 1.25rem; font-weight: 800; color: #facc15; }
-    .order-time { font-size: 0.85rem; color: #94a3b8; }
-    .items-list { list-style: none; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
-    .item-row { display: flex; justify-content: space-between; font-size: 1.05rem; }
-    .item-qty { font-weight: bold; color: #38bdf8; margin-right: 8px; }
-    .card-bottom { border-top: 1px solid #334155; padding-top: 12px; display: flex; justify-content: space-between; align-items: center; }
-    .total-price { font-size: 1.15rem; font-weight: bold; color: #4ade80; }
-    .btn-group { display: flex; gap: 8px; }
-    .btn { border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
-    .btn-print { background: #64748b; color: white; }
-    .btn-done { background: #22c55e; color: white; }
-    .empty { grid-column: 1/-1; text-align: center; color: #64748b; padding: 40px; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #334155;
+      margin-bottom: 24px;
+    }
+    .brand {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f97316;
+    }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      background: #1e293b;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid #475569;
+    }
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 18px;
+    }
+    .order-card {
+      background: #1e293b;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px dashed #475569;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .table-tag {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #facc15;
+    }
+    .order-time {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+    .items-list {
+      list-style: none;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.05rem;
+    }
+    .item-qty {
+      font-weight: bold;
+      color: #38bdf8;
+      margin-right: 8px;
+    }
+    .card-bottom {
+      border-top: 1px solid #334155;
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .total-price {
+      font-size: 1.15rem;
+      font-weight: bold;
+      color: #4ade80;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .btn-print {
+      background: #64748b;
+      color: white;
+    }
+    .btn-done {
+      background: #22c55e;
+      color: white;
+    }
 
-    /* 58mm KOT: screen par chhupa, sirf print mein dikhega */
-    #printArea { display: none; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .status-badge.clickable { cursor: pointer; user-select: none; }
+    .status-badge.off { opacity: 0.6; }
+    .btn-menu { background: #f97316; color: #fff; padding: 8px 14px; border-radius: 20px; }
+    .menu-panel { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+    .menu-row { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .menu-row.off { opacity: 0.55; }
+    .menu-name { flex: 1; min-width: 140px; font-weight: 600; font-size: 1.05rem; }
+    .price-input { width: 90px; padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 1rem; }
+    .avail-label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: #cbd5e1; cursor: pointer; }
+    .avail-label input { width: 18px; height: 18px; }
+    .btn-save { background: #3b82f6; color: #fff; }
+    .add-form { background: #1e293b; border: 2px dashed #475569; border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .add-form .name-input { flex: 1; min-width: 150px; padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 1rem; }
+    .lang-input { padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 1rem; min-width: 0; width: 100%; }
+    .names { flex: 1 1 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+    .btn-add { background: #22c55e; color: #fff; }
+    .btn-del { background: #ef4444; color: #fff; }
+    .menu-msg { text-align: center; color: #94a3b8; padding: 20px; }
+
+    /* थर्मल प्रिंटर (58mm KOT) स्टाइल */
     @media print {
-      @page { margin: 0; }
-      body { background: #fff; padding: 0; }
-      body > *:not(#printArea) { display: none !important; }
-      #printArea { display: block; width: 58mm; color: #000; background: #fff; font-family: monospace; font-size: 12px; padding: 5px; }
+      body * {
+        visibility: hidden;
+      }
+      #printArea, #printArea * {
+        visibility: visible;
+      }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 58mm;
+        color: #000;
+        background: #fff;
+        font-family: monospace;
+        padding: 5px;
+      }
     }
   </style>
 </head>
 <body>
 
+  <!-- हेडर -->
   <header>
-    <div class="brand">लाइव किचन डैशबोर्ड</div>
-    <div class="head-right">
-      <button class="toggle" id="autoBtn" onclick="toggleAuto()">🖨️ ऑटो-प्रिंट: चालू</button>
-      <div class="status-badge"><div class="live-dot off" id="liveDot"></div><span id="liveText">कनेक्ट हो रहा है...</span></div>
+    <div class="brand">पहाड़ी ढाबा - लाइव किचन डैशबोर्ड</div>
+    <div class="header-right">
+      <button class="btn btn-menu" id="toggleViewBtn" onclick="toggleView()">🍽️ मेनू मैनेज करें</button>
+      <div class="status-badge clickable" id="autoPrintBadge" onclick="toggleAutoPrint()" title="क्लिक करके चालू/बंद करें"></div>
+      <div class="status-badge">
+        <div class="live-dot"></div>
+        <span>लाइव कनेक्टेड</span>
+      </div>
     </div>
   </header>
 
+  <!-- लाइव ऑर्डर्स ग्रिड -->
   <div class="grid" id="ordersGrid">
-    <div class="empty" id="emptyMsg">नए ऑर्डर्स की प्रतीक्षा है...</div>
+    <div style="grid-column: 1/-1; text-align: center; color: #64748b; padding: 40px;">
+      नए ऑर्डर्स की प्रतीक्षा है...
+    </div>
   </div>
 
-  <div id="printArea"></div>
+  <!-- मेनू मैनेज पैनल -->
+  <div class="menu-panel" id="menuPanel" style="display:none;">
+    <div class="add-form">
+      <div class="names">
+        <input type="text" id="newName" class="lang-input" placeholder="हिंदी नाम" maxlength="100" />
+        <input type="text" id="newNameEn" class="lang-input" placeholder="English name" maxlength="100" />
+        <input type="text" id="newNamePa" class="lang-input" placeholder="ਪੰਜਾਬੀ ਨਾਮ" maxlength="100" />
+      </div>
+      <span>₹ <input type="number" id="newPrice" class="price-input" min="0" placeholder="Price" /></span>
+      <button class="btn btn-add" onclick="addMenuItem()">+ जोड़ें</button>
+    </div>
+    <div id="menuList" style="display:flex; flex-direction:column; gap:10px;"></div>
+  </div>
 
-  <script>
-    const restaurantId = sessionStorage.getItem('restaurant_id');
-    const restaurantName = sessionStorage.getItem('restaurant_name') || 'होटल';
-    if (!restaurantId) window.location.href = '/login.html';
+  <!-- थर्मल KOT प्रिंटिंग कंटेनर -->
+  <div id="printArea" style="display: none;"></div>
 
-    document.querySelector('.brand').textContent = `${restaurantName} - लाइव किचन डैशबोर्ड`;
+  <script> 
+  // 1. चेक करें कि होटल लॉगिन है या नहीं
+  const restaurantId = sessionStorage.getItem('restaurant_id');
+  const restaurantName = sessionStorage.getItem('restaurant_name');
 
-    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const orders = new Map(); // id -> order
+  const authToken = sessionStorage.getItem('auth_token');
 
-    // ---------- ऑटो-प्रिंट चालू/बंद (याद रखता है) ----------
-    let autoPrint = localStorage.getItem('autoPrint') !== 'off';
-    function paintToggle() {
-      document.getElementById('autoBtn').textContent = `🖨️ ऑटो-प्रिंट: ${autoPrint ? 'चालू' : 'बंद'}`;
+  // अगर लॉगिन नहीं है तो सीधे लॉगिन पेज पर भेज दें
+  if (!restaurantId || !authToken) {
+    window.location.href = '/login.html';
+  }
+
+  // हेडर पर होटल का नाम सेट करना
+  const headerBrand = document.querySelector('.brand');
+  if (headerBrand && restaurantName) {
+    headerBrand.innerText = `${restaurantName} - लाइव किचन डैशबोर्ड`;
+  }
+    const socket = io();
+// connect (aur reconnect) hone par room join karein
+socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
+
+    // ऑटो-प्रिंट: चालू/बंद (याद रखा जाता है)
+    let autoPrint = true;
+    try { autoPrint = localStorage.getItem('autoPrint') !== 'off'; } catch (e) {}
+
+    function renderAutoPrintBadge() {
+      const b = document.getElementById('autoPrintBadge');
+      b.textContent = `🖨️ ऑटो-प्रिंट: ${autoPrint ? 'चालू' : 'बंद'}`;
+      b.classList.toggle('off', !autoPrint);
     }
-    function toggleAuto() {
+
+    function toggleAutoPrint() {
       autoPrint = !autoPrint;
-      localStorage.setItem('autoPrint', autoPrint ? 'on' : 'off');
-      paintToggle();
+      try { localStorage.setItem('autoPrint', autoPrint ? 'on' : 'off'); } catch (e) {}
+      renderAutoPrintBadge();
     }
-    paintToggle();
+    renderAutoPrintBadge();
 
-    // ---------- बीप ----------
+    // बीप साउंड जेनरेटर (Web Audio API)
     function playBeep() {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator(), gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(); osc.stop(ctx.currentTime + 0.35);
-      } catch (e) {}
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // 880Hz बीप
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) {
+        console.log("Audio not supported");
+      }
     }
 
-    // ---------- पर्ची कतार (एक-एक करके, कोई छूटे नहीं) ----------
-    const printQueue = [];
-    let printing = false, safetyTimer = null;
+    // नया ऑर्डर आने पर हैंडलर
+    socket.on('new_order', (order) => {
+      playBeep();
+      addOrderCard(order);
+      if (autoPrint) printKOT(order);
+    });
 
-    function queuePrint(order) {
-      printQueue.push(order);
-      runQueue();
-    }
+    let hasOrders = false;
 
-    function runQueue() {
-      if (printing || printQueue.length === 0) return;
-      printing = true;
-      fillKOT(printQueue.shift());
-      safetyTimer = setTimeout(finishPrint, 20000); // अटक जाए तो खुद आगे बढ़े
-      setTimeout(() => window.print(), 200);
-    }
-
-    function finishPrint() {
-      clearTimeout(safetyTimer);
-      printing = false;
-      setTimeout(runQueue, 400);
-    }
-    window.addEventListener('afterprint', finishPrint);
-
-    function fillKOT(order) {
-      const rows = order.items.map((i) =>
-        `<div style="display:flex;justify-content:space-between;margin:3px 0;">
-           <span>${i.quantity}x ${esc(i.name)}</span><span>₹${i.price * i.quantity}</span>
-         </div>`).join('');
-
-      document.getElementById('printArea').innerHTML = `
-        <div style="text-align:center;font-weight:bold;font-size:16px;">${esc(restaurantName)}</div>
-        <div style="text-align:center;margin-bottom:5px;">--- KOT पर्ची ---</div>
-        <div><strong>टेबल नं:</strong> ${esc(order.table_no)}</div>
-        <div><strong>ऑर्डर ID:</strong> #${order.id}</div>
-        <div><strong>समय:</strong> ${esc(order.time || '')}</div>
-        <hr style="border:none;border-top:1px dashed #000;margin:6px 0;" />
-        ${rows}
-        <hr style="border:none;border-top:1px dashed #000;margin:6px 0;" />
-        <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:14px;">
-          <span>कुल राशि:</span><span>₹${order.total_amount}</span>
-        </div>
-        <div style="text-align:center;margin-top:8px;font-size:11px;">धन्यवाद! पुनः पधारें</div>`;
-    }
-
-    // ---------- कार्ड ----------
     function addOrderCard(order) {
-      if (orders.has(order.id)) return;
-      orders.set(order.id, order);
-      const empty = document.getElementById('emptyMsg');
-      if (empty) empty.remove();
+      const grid = document.getElementById('ordersGrid');
+      if (!hasOrders) {
+        grid.innerHTML = "";
+        hasOrders = true;
+      }
 
       const card = document.createElement('div');
       card.className = 'order-card';
       card.id = `order-${order.id}`;
 
-      const itemsHtml = order.items.map((i) =>
-        `<li class="item-row"><span><span class="item-qty">${i.quantity}x</span> ${esc(i.name)}</span><span>₹${i.price * i.quantity}</span></li>`
-      ).join('');
+      let itemsHtml = '';
+      order.items.forEach(item => {
+        itemsHtml += `
+          <li class="item-row">
+            <span><span class="item-qty">${item.quantity}x</span> ${item.name}</span>
+            <span>₹${item.price * item.quantity}</span>
+          </li>
+        `;
+      });
 
       card.innerHTML = `
         <div>
           <div class="card-top">
-            <span class="table-tag">टेबल: ${esc(order.table_no)}</span>
-            <span class="order-time">${esc(order.time || 'अभी')} | #${order.id}</span>
+            <span class="table-tag">टेबल: ${order.table_no}</span>
+            <span class="order-time">${order.time || 'अभी'} | #${order.id}</span>
           </div>
-          <ul class="items-list">${itemsHtml}</ul>
+          <ul class="items-list">
+            ${itemsHtml}
+          </ul>
         </div>
         <div class="card-bottom">
           <div class="total-price">₹${order.total_amount}</div>
           <div class="btn-group">
-            <button class="btn btn-print">🖨️ पर्ची</button>
-            <button class="btn btn-done">✓ पूरा हुआ</button>
+            <button class="btn btn-print" onclick='printKOT(${JSON.stringify(order)})'>🖨️ पर्ची</button>
+            <button class="btn btn-done" onclick="completeOrder(${order.id})">✓ पूरा हुआ</button>
           </div>
-        </div>`;
+        </div>
+      `;
 
-      card.querySelector('.btn-print').addEventListener('click', () => queuePrint(order));
-      card.querySelector('.btn-done').addEventListener('click', () => completeOrder(order.id));
-      document.getElementById('ordersGrid').prepend(card);
+      grid.prepend(card);
     }
 
-    async function completeOrder(id) {
+    // 58mm KOT थर्मल पर्ची प्रिंट
+    function printKOT(order) {
+      const printBox = document.getElementById('printArea');
+      printBox.style.display = 'block';
+
+      let itemsText = '';
+      order.items.forEach(item => {
+        itemsText += `
+          <div style="display:flex; justify-content:space-between; margin: 3px 0;">
+            <span>${item.quantity}x ${item.name}</span>
+            <span>₹${item.price * item.quantity}</span>
+          </div>
+        `;
+      });
+
+      printBox.innerHTML = `
+        <div style="text-align:center; font-weight:bold; font-size:16px;">${String(restaurantName || '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</div>
+        <div style="text-align:center; margin-bottom: 5px;">--- KOT पर्ची ---</div>
+        <div><strong>टेबल नं:</strong> ${order.table_no}</div>
+        <div><strong>ऑर्डर ID:</strong> #${order.id}</div>
+        
+        <div><strong>समय:</strong> ${order.time || (order.created_at ? new Date(order.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }))}</div>
+        <hr style="border:none; border-top:1px dashed #000; margin: 6px 0;" />
+        ${itemsText}
+        <hr style="border:none; border-top:1px dashed #000; margin: 6px 0;" />
+        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px;">
+          <span>कुल राशि:</span>
+          <span>₹${order.total_amount}</span>
+        </div>
+        <div style="text-align:center; margin-top:8px; font-size:11px;">धन्यवाद! पुनः पधारें</div>
+      `;
+
+      window.print();
+      printBox.style.display = 'none';
+    }
+
+    // ---------- मेनू मैनेज: price और available ----------
+    let menuViewOpen = false;
+
+    function authHeaders() {
+      return { 'Content-Type': 'application/json', 'x-auth-token': authToken };
+    }
+
+    function goLogin() {
+      sessionStorage.clear();
+      window.location.href = '/login.html';
+    }
+
+    function toggleView() {
+      menuViewOpen = !menuViewOpen;
+      document.getElementById('ordersGrid').style.display = menuViewOpen ? 'none' : 'grid';
+      document.getElementById('menuPanel').style.display = menuViewOpen ? 'flex' : 'none';
+      document.getElementById('toggleViewBtn').innerText = menuViewOpen ? '← ऑर्डर्स देखें' : '🍽️ मेनू मैनेज करें';
+      if (menuViewOpen) loadAdminMenu();
+    }
+
+    async function loadAdminMenu() {
+      const panel = document.getElementById('menuList');
+      panel.innerHTML = '<div class="menu-msg">मेनू लोड हो रहा है...</div>';
       try {
-        const res = await fetch(`/api/orders/${id}/done`, { method: 'PATCH' });
-        if (!res.ok) throw new Error();
+        const res = await fetch('/api/admin/menu', { headers: authHeaders() });
+        if (res.status === 401) return goLogin();
+        const items = await res.json();
+        renderAdminMenu(items);
       } catch (e) {
-        alert('सर्वर पर अपडेट नहीं हो पाया, दोबारा कोशिश करें।');
+        panel.innerHTML = '<div class="menu-msg">मेनू लोड नहीं हो पाया!</div>';
+      }
+    }
+
+    function renderAdminMenu(items) {
+      const panel = document.getElementById('menuList');
+      panel.innerHTML = '';
+      if (!items.length) {
+        panel.innerHTML = '<div class="menu-msg">मेनू खाली है।</div>';
         return;
       }
-      orders.delete(id);
-      const card = document.getElementById(`order-${id}`);
-      if (card) { card.style.opacity = '0.4'; setTimeout(() => card.remove(), 400); }
+
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'menu-row' + (item.is_available ? '' : ' off');
+        row.id = `menu-row-${item.id}`;
+
+        const names = document.createElement('div');
+        names.className = 'names';
+        const mk = (value, placeholder) => {
+          const inp = document.createElement('input');
+          inp.type = 'text';
+          inp.className = 'lang-input';
+          inp.maxLength = 100;
+          inp.placeholder = placeholder;
+          inp.value = value || '';
+          names.appendChild(inp);
+          return inp;
+        };
+        const nameHi = mk(item.name, 'हिंदी नाम');
+        const nameEn = mk(item.name_en, 'English name');
+        const namePa = mk(item.name_pa, 'ਪੰਜਾਬੀ ਨਾਮ');
+
+        const priceWrap = document.createElement('div');
+        priceWrap.appendChild(document.createTextNode('₹ '));
+        const price = document.createElement('input');
+        price.type = 'number';
+        price.min = '0';
+        price.className = 'price-input';
+        price.value = item.price;
+        priceWrap.appendChild(price);
+
+        const label = document.createElement('label');
+        label.className = 'avail-label';
+        const check = document.createElement('input');
+        check.type = 'checkbox';
+        check.checked = !!item.is_available;
+        label.appendChild(check);
+        label.appendChild(document.createTextNode('उपलब्ध'));
+
+        const save = document.createElement('button');
+        save.className = 'btn btn-save';
+        save.textContent = 'सेव';
+
+        const doSave = () => saveMenuItem(item.id, { nameHi, nameEn, namePa, price, check }, save, row);
+        save.onclick = doSave;
+        check.onchange = doSave; // available बदलते ही तुरंत सेव
+
+        const del = document.createElement('button');
+        del.className = 'btn btn-del';
+        del.textContent = '🗑️ हटाएँ';
+        del.onclick = () => deleteMenuItem(item.id, item.name || item.name_en || item.name_pa);
+
+        row.append(names, priceWrap, label, save, del);
+        panel.appendChild(row);
+      });
     }
 
-    // ---------- पुराने pending ऑर्डर (बिना प्रिंट) ----------
-    async function loadPending() {
+    async function addMenuItem() {
+      const nameEl = document.getElementById('newName');
+      const nameEnEl = document.getElementById('newNameEn');
+      const namePaEl = document.getElementById('newNamePa');
+      const priceEl = document.getElementById('newPrice');
+      const name = nameEl.value.trim();
+      const name_en = nameEnEl.value.trim();
+      const name_pa = namePaEl.value.trim();
+      const price = Number(priceEl.value);
+
+      if (!name && !name_en && !name_pa) { alert('कम से कम एक भाषा में dish का नाम डालें!'); return; }
+      if (priceEl.value === '' || price < 0) { alert('सही price डालें!'); return; }
+
       try {
-        const res = await fetch(`/api/orders/pending?restaurant=${restaurantId}`);
-        const list = await res.json();
-        list.forEach(addOrderCard);
-      } catch (e) { console.log('Pending load failed'); }
+        const res = await fetch('/api/admin/menu', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ name, name_en, name_pa, price })
+        });
+        if (res.status === 401) return goLogin();
+        if (!res.ok) throw new Error('add failed');
+        nameEl.value = '';
+        nameEnEl.value = '';
+        namePaEl.value = '';
+        priceEl.value = '';
+        loadAdminMenu();
+      } catch (e) {
+        alert('dish जुड़ नहीं पाया, दोबारा कोशिश करें!');
+      }
     }
 
-    // ---------- सॉकेट ----------
-    const socket = io();
-    socket.on('connect', () => {
-      socket.emit('join_restaurant', restaurantId); // reconnect पर भी दोबारा जुड़ेगा
-      document.getElementById('liveDot').classList.remove('off');
-      document.getElementById('liveText').textContent = 'लाइव कनेक्टेड';
-      loadPending(); // reconnect पर छूटे ऑर्डर भी आ जाएँगे
-    });
-    socket.on('disconnect', () => {
-      document.getElementById('liveDot').classList.add('off');
-      document.getElementById('liveText').textContent = 'कनेक्शन टूटा...';
-    });
+    async function deleteMenuItem(id, name) {
+      if (!confirm(`"${name}" को मेनू से हटाना है?`)) return;
+      try {
+        const res = await fetch(`/api/admin/menu/${id}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        if (res.status === 401) return goLogin();
+        if (!res.ok) throw new Error('delete failed');
+        const data = await res.json();
+        if (data.deleted === false) {
+          alert('यह dish पुराने ऑर्डर्स में है, इसलिए हटाने की जगह "उपलब्ध नहीं" कर दी गई है।');
+        }
+        loadAdminMenu();
+      } catch (e) {
+        alert('हटाया नहीं जा सका, दोबारा कोशिश करें!');
+      }
+    }
 
-    socket.on('new_order', (order) => {
-      if (orders.has(order.id)) return;
-      playBeep();
-      addOrderCard(order);
-      if (autoPrint) queuePrint(order);
-    });
+    async function saveMenuItem(id, f, btn, row) {
+      const body = {
+        name: f.nameHi.value.trim(),
+        name_en: f.nameEn.value.trim(),
+        name_pa: f.namePa.value.trim(),
+        price: Number(f.price.value),
+        is_available: f.check.checked
+      };
+      if (!body.name && !body.name_en && !body.name_pa) {
+        alert('कम से कम एक भाषा में नाम डालें!');
+        return;
+      }
+      if (f.price.value === '' || body.price < 0) {
+        alert('सही price डालें!');
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '...';
+      try {
+        const res = await fetch(`/api/admin/menu/${id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify(body)
+        });
+        if (res.status === 401) return goLogin();
+        if (!res.ok) throw new Error('save failed');
+        row.classList.toggle('off', !f.check.checked);
+        btn.textContent = '✓ सेव हुआ';
+      } catch (e) {
+        btn.textContent = 'सेव';
+        alert('सेव नहीं हो पाया, दोबारा कोशिश करें!');
+      }
+      btn.disabled = false;
+      setTimeout(() => { btn.textContent = 'सेव'; }, 1500);
+    }
+
+    function completeOrder(orderId) {
+      const card = document.getElementById(`order-${orderId}`);
+      if (card) {
+        card.style.opacity = '0.4';
+        card.style.border = '1px solid #475569';
+        setTimeout(() => card.remove(), 400);
+      }
+    }
   </script>
 </body>
 </html>

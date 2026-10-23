@@ -49,6 +49,7 @@
           // सेशन में ID और नाम सुरक्षित रखना
           sessionStorage.setItem('restaurant_id', data.restaurant.id);
           sessionStorage.setItem('restaurant_name', data.restaurant.name);
+          sessionStorage.setItem('auth_token', data.token);
           window.location.href = '/dashboard.html';
         } else {
           err.innerText = data.message || "लॉगिन असफल!";
