@@ -276,9 +276,9 @@ app.post('/api/orders', (req, res) => {
     }
 
     const orderId = result.insertId;
-    const orderItemsData = items.map((i) => [orderId, i.id, i.quantity, i.price]);
-    const sqlItems = 'INSERT INTO order_items (order_id, item_id, quantity, price) VALUES ?';
-
+     const orderItemsData = items.map((i) => [orderId, String(i.name || '').slice(0, 255), i.quantity, i.price]);
+     const sqlItems = 'INSERT INTO order_items (order_id, item_name, quantity, price) VALUES ?';
+   
     db.query(sqlItems, [orderItemsData], (itemErr) => {
       if (itemErr) {
         console.error('❌ Items Insert Error:', itemErr);
