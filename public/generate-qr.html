@@ -1,49 +1,79 @@
+
 <!DOCTYPE html>
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>होटल QR कोड जनरेटर</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     body { font-family: sans-serif; background: #0f172a; color: #fff; padding: 20px; text-align: center; }
-    .controls { background: #1e293b; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 20px; }
-    select, button { padding: 10px 15px; font-size: 1rem; border-radius: 6px; border: none; margin: 5px; }
-    select { background: #334155; color: #fff; }
+    .controls { background: #1e293b; padding: 15px; border-radius: 10px; display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .controls label { font-size: 0.95rem; }
+    input, button { padding: 10px 12px; font-size: 1rem; border-radius: 6px; border: none; }
+    input { background: #334155; color: #fff; width: 90px; text-align: center; }
     button { background: #22c55e; color: #000; font-weight: bold; cursor: pointer; }
+    button.secondary { background: #38bdf8; }
+    #msg { min-height: 24px; margin-bottom: 14px; font-size: 0.95rem; color: #facc15; }
     .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-    .card { background: #fff; color: #000; padding: 15px; border-radius: 10px; width: 180px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-    .card h3 { margin: 5px 0; font-size: 1rem; color: #1e293b; }
-    .card p { margin: 2px 0 10px 0; font-size: 0.85rem; color: #64748b; }
+    .card { background: #fff; color: #000; padding: 15px; border-radius: 10px; width: 200px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .card h3 { margin: 5px 0; font-size: 1.05rem; color: #1e293b; }
+    .card .tbl { margin: 2px 0 10px 0; font-size: 1.1rem; font-weight: bold; color: #b91c1c; }
+    .card .hint { margin-top: 8px; font-size: 0.75rem; color: #64748b; }
     .qr-box { display: flex; justify-content: center; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .controls, #msg, h1 { display: none !important; }
+      .grid { gap: 12px; }
+      .card { box-shadow: none; border: 1px solid #000; page-break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
 
-  <h1>📱 मल्टी-होटल टेबल QR कोड जनरेटर</h1>
+  <h1>📱 टेबल QR कोड जनरेटर</h1>
 
   <div class="controls">
-    <label>होटल चुनें: </label>
-    <select id="hotelSelect">
-      <option value="1">होटल 1 (पहाड़ी ढाबा)</option>
-      <option value="2">होटल 2 (शिवालिक रेस्टोरेंट)</option>
-      
-    </select>
+    <label>होटल ID: <input type="number" id="hotelId" min="1" value="1"></label>
+    <label>टेबल कितने: <input type="number" id="tables" min="1" max="100" value="10"></label>
     <button onclick="renderQRCodes()">QR कोड दिखाएँ</button>
+    <button class="secondary" onclick="window.print()">🖨️ प्रिंट करें</button>
   </div>
+  <div id="msg"></div>
 
   <div class="grid" id="qrContainer"></div>
 
   <script>
     const baseUrl = window.location.origin;
-    const totalTables = 10;
 
-    function renderQRCodes() {
-      const hotelSelect = document.getElementById('hotelSelect');
-      const restaurantId = hotelSelect.value;
-      const restaurantName = hotelSelect.options[hotelSelect.selectedIndex].text;
+    async function renderQRCodes() {
+      const restaurantId = Number(document.getElementById('hotelId').value);
+      const totalTables = Math.min(Math.max(Number(document.getElementById('tables').value) || 1, 1), 100);
+      const msg = document.getElementById('msg');
       const container = document.getElementById('qrContainer');
-      
-      container.innerHTML = ""; // पुराना साफ़ करें
+
+      container.innerHTML = '';
+      msg.textContent = '';
+
+      if (!restaurantId) {
+        msg.textContent = 'सही होटल ID डालें!';
+        return;
+      }
+
+      // होटल का नाम सर्वर से (नाम खुद टाइप करने की ज़रूरत नहीं)
+      let restaurantName = 'होटल ' + restaurantId;
+      try {
+        const res = await fetch(`/api/menu?restaurant=${restaurantId}`);
+        const data = await res.json();
+        if (!data.restaurantName) {
+          msg.textContent = `ID ${restaurantId} वाला होटल नहीं मिला। पहले database में होटल जोड़ें।`;
+          return;
+        }
+        restaurantName = data.restaurantName;
+      } catch (e) {
+        msg.textContent = 'होटल का नाम नहीं मिल सका। पेज अपनी live website (onrender.com) पर खोलें।';
+      }
 
       for (let table = 1; table <= totalTables; table++) {
         const targetUrl = `${baseUrl}/menu.html?restaurant=${restaurantId}&table=${table}`;
@@ -52,28 +82,27 @@
         card.className = 'card';
 
         const title = document.createElement('h3');
-        title.innerText = restaurantName;
+        title.textContent = restaurantName;
 
-        const tableText = document.createElement('p');
-        tableText.innerText = `टेबल नंबर: ${table}`;
+        const tableText = document.createElement('div');
+        tableText.className = 'tbl';
+        tableText.textContent = `टेबल नंबर: ${table}`;
 
         const qrDiv = document.createElement('div');
         qrDiv.className = 'qr-box';
 
-        card.appendChild(title);
-        card.appendChild(tableText);
-        card.appendChild(qrDiv);
+        const hint = document.createElement('div');
+        hint.className = 'hint';
+        hint.textContent = 'स्कैन करें और ऑर्डर करें';
+
+        card.append(title, tableText, qrDiv, hint);
         container.appendChild(card);
 
-        new QRCode(qrDiv, {
-          text: targetUrl,
-          width: 140,
-          height: 140
-        });
+        new QRCode(qrDiv, { text: targetUrl, width: 160, height: 160 });
       }
     }
 
-    // पेज खुलते ही होटल 1 लोड होगा
+    // पेज खुलते ही होटल 1 के QR
     renderQRCodes();
   </script>
 </body>
