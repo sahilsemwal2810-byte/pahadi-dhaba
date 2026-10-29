@@ -205,6 +205,23 @@
         <input type="text" id="newNameEn" class="lang-input" placeholder="English name" maxlength="100" />
         <input type="text" id="newNamePa" class="lang-input" placeholder="ਪੰਜਾਬੀ ਨਾਮ" maxlength="100" />
       </div>
+      <div class="names">
+        <select id="newCat" class="lang-input">
+          <option value="">श्रेणी चुनें</option>
+          <option value="starters">स्टार्टर्स</option>
+          <option value="main">मुख्य व्यंजन</option>
+          <option value="rice">राइस</option>
+          <option value="bread">रोटी / ब्रेड</option>
+          <option value="fastfood">फास्ट फूड</option>
+          <option value="desserts">डेज़र्ट</option>
+          <option value="drinks">ड्रिंक्स</option>
+        </select>
+        <select id="newType" class="lang-input">
+          <option value="">वेज / नॉन-वेज</option>
+          <option value="veg">🟢 वेज</option>
+          <option value="nonveg">🔴 नॉन-वेज</option>
+        </select>
+      </div>
       <span>₹ <input type="number" id="newPrice" class="price-input" min="0" placeholder="Price" /></span>
       <button class="btn btn-add" onclick="addMenuItem()">+ जोड़ें</button>
     </div>
@@ -391,6 +408,27 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
       }
     }
 
+    const CAT_OPTIONS = [['starters', 'स्टार्टर्स'], ['main', 'मुख्य व्यंजन'], ['rice', 'राइस'], ['bread', 'रोटी / ब्रेड'], ['fastfood', 'फास्ट फूड'], ['desserts', 'डेज़र्ट'], ['drinks', 'ड्रिंक्स']];
+
+    const TYPE_OPTIONS = [['veg', '🟢 वेज'], ['nonveg', '🔴 नॉन-वेज']];
+
+    function makeSelect(options, placeholder, value) {
+      const sel = document.createElement('select');
+      sel.className = 'lang-input';
+      const first = document.createElement('option');
+      first.value = '';
+      first.textContent = placeholder;
+      sel.appendChild(first);
+      options.forEach(([v, label]) => {
+        const o = document.createElement('option');
+        o.value = v;
+        o.textContent = label;
+        sel.appendChild(o);
+      });
+      sel.value = value || '';
+      return sel;
+    }
+
     function renderAdminMenu(items) {
       const panel = document.getElementById('menuList');
       panel.innerHTML = '';
@@ -420,6 +458,12 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
         const nameEn = mk(item.name_en, 'English name');
         const namePa = mk(item.name_pa, 'ਪੰਜਾਬੀ ਨਾਮ');
 
+        const selWrap = document.createElement('div');
+        selWrap.className = 'names';
+        const catSel = makeSelect(CAT_OPTIONS, 'श्रेणी चुनें', item.category);
+        const typeSel = makeSelect(TYPE_OPTIONS, 'वेज / नॉन-वेज', item.food_type);
+        selWrap.append(catSel, typeSel);
+
         const priceWrap = document.createElement('div');
         priceWrap.appendChild(document.createTextNode('₹ '));
         const price = document.createElement('input');
@@ -441,7 +485,7 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
         save.className = 'btn btn-save';
         save.textContent = 'सेव';
 
-        const doSave = () => saveMenuItem(item.id, { nameHi, nameEn, namePa, price, check }, save, row);
+        const doSave = () => saveMenuItem(item.id, { nameHi, nameEn, namePa, catSel, typeSel, price, check }, save, row);
         save.onclick = doSave;
         check.onchange = doSave; // available बदलते ही तुरंत सेव
 
@@ -450,7 +494,7 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
         del.textContent = '🗑️ हटाएँ';
         del.onclick = () => deleteMenuItem(item.id, item.name || item.name_en || item.name_pa);
 
-        row.append(names, priceWrap, label, save, del);
+        row.append(names, selWrap, priceWrap, label, save, del);
         panel.appendChild(row);
       });
     }
@@ -472,7 +516,11 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
         const res = await fetch('/api/admin/menu', {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ name, name_en, name_pa, price })
+          body: JSON.stringify({
+            name, name_en, name_pa, price,
+            category: document.getElementById('newCat').value,
+            food_type: document.getElementById('newType').value
+          })
         });
         if (res.status === 401) return goLogin();
         if (!res.ok) throw new Error('add failed');
@@ -480,6 +528,8 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
         nameEnEl.value = '';
         namePaEl.value = '';
         priceEl.value = '';
+        document.getElementById('newCat').value = '';
+        document.getElementById('newType').value = '';
         loadAdminMenu();
       } catch (e) {
         alert('dish जुड़ नहीं पाया, दोबारा कोशिश करें!');
@@ -510,6 +560,8 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
         name: f.nameHi.value.trim(),
         name_en: f.nameEn.value.trim(),
         name_pa: f.namePa.value.trim(),
+        category: f.catSel.value,
+        food_type: f.typeSel.value,
         price: Number(f.price.value),
         is_available: f.check.checked
       };

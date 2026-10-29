@@ -73,6 +73,11 @@ function requireAuth(req, res, next) {
   next();
 }
 
+// Category aur veg/non-veg ki fixed list
+const CATEGORIES = ['starters', 'main', 'rice', 'bread', 'fastfood', 'desserts', 'drinks'];
+const FOOD_TYPES = ['veg', 'nonveg'];
+const pickOne = (v, list) => (list.includes(v) ? v : null);
+
 // ---------- 1. Menu API ----------
 // Response: { restaurantName, items: [...] }
 app.get('/api/menu', (req, res) => {
@@ -101,7 +106,7 @@ app.get('/api/menu', (req, res) => {
 // ---------- Dashboard: menu manage (price / available) ----------
 // Saare items (unavailable bhi) dikhane ke liye
 app.get('/api/admin/menu', requireAuth, (req, res) => {
-  const sql = 'SELECT id, name, name_en, name_pa, price, is_available FROM menu_items WHERE restaurant_id = ? ORDER BY id';
+  const sql = 'SELECT id, name, name_en, name_pa, category, food_type, price, is_available FROM menu_items WHERE restaurant_id = ? ORDER BY id';
   db.query(sql, [req.restaurantId], (err, results) => {
     if (err) {
       console.error('Admin menu fetch error:', err);
@@ -141,6 +146,15 @@ app.put('/api/admin/menu/:id', requireAuth, (req, res) => {
     values.push(n[0] || n[1] || n[2], n[1] || null, n[2] || null);
   }
 
+  if (req.body.category !== undefined) {
+    fields.push('category = ?');
+    values.push(pickOne(req.body.category, CATEGORIES));
+  }
+  if (req.body.food_type !== undefined) {
+    fields.push('food_type = ?');
+    values.push(pickOne(req.body.food_type, FOOD_TYPES));
+  }
+
   if (!itemId || fields.length === 0) {
     return res.status(400).json({ error: 'Kuch badalne ko nahi mila' });
   }
@@ -177,10 +191,13 @@ app.post('/api/admin/menu', requireAuth, (req, res) => {
   }
 
   const sql =
-    'INSERT INTO menu_items (restaurant_id, name, name_en, name_pa, price, is_available) VALUES (?, ?, ?, ?, ?, 1)';
+    'INSERT INTO menu_items (restaurant_id, name, name_en, name_pa, category, food_type, price, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, 1)';
   db.query(
     sql,
-    [req.restaurantId, name, name_en || null, name_pa || null, price],
+    [
+      req.restaurantId, name, name_en || null, name_pa || null,
+      pickOne(req.body.category, CATEGORIES), pickOne(req.body.food_type, FOOD_TYPES), price
+    ],
     (err, result) => {
       if (err) {
         console.error('Admin menu insert error:', err);
@@ -276,9 +293,9 @@ app.post('/api/orders', (req, res) => {
     }
 
     const orderId = result.insertId;
-     const orderItemsData = items.map((i) => [orderId, String(i.name || '').slice(0, 255), i.quantity, i.price]);
-     const sqlItems = 'INSERT INTO order_items (order_id, item_name, quantity, price) VALUES ?';
-   
+    const orderItemsData = items.map((i) => [orderId, String(i.name || '').slice(0, 255), i.quantity, i.price]);
+    const sqlItems = 'INSERT INTO order_items (order_id, item_name, quantity, price) VALUES ?';
+
     db.query(sqlItems, [orderItemsData], (itemErr) => {
       if (itemErr) {
         console.error('❌ Items Insert Error:', itemErr);

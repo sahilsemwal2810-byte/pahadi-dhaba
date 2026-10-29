@@ -10,6 +10,59 @@
     .langs { display: flex; gap: 6px; }
     .lang-btn { border: 1px solid #ced4da; background: #fff; color: #495057; padding: 5px 10px; border-radius: 16px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
     .lang-btn.active { background: #e63946; border-color: #e63946; color: #fff; }
+
+    .chips { display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; padding-bottom: 2px; }
+    .chip { flex: 0 0 auto; border: 1px solid #ced4da; background: #fff; color: #495057; padding: 5px 12px; border-radius: 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .chip.active { background: #e63946; border-color: #e63946; color: #fff; }
+    .chip.veg.active { background: #2b9348; border-color: #2b9348; }
+    .chip.nonveg.active { background: #c1121f; border-color: #c1121f; }
+
+    .vdot { display: inline-block; width: 12px; height: 12px; border: 2px solid; border-radius: 3px; margin-right: 6px; position: relative; vertical-align: middle; }
+    .vdot::after { content: ""; position: absolute; inset: 2px; border-radius: 50%; background: currentColor; }
+    .vdot.veg { color: #2b9348; }
+    .vdot.nonveg { color: #c1121f; }
+
+    /* ---------- Rang (theme) ---------- */
+    body { background: #fff1de; }
+    header { background: linear-gradient(135deg, #b5179e 0%, #e63946 55%, #f77f00 100%); box-shadow: 0 3px 10px rgba(0,0,0,.18); }
+    .restaurant-title { color: #fff; }
+    .table-badge { background: rgba(255,255,255,.22); color: #fff; }
+    .lang-btn, .chip { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.45); color: #fff; }
+    .lang-btn.active, .chip.active { background: #ffd166; border-color: #ffd166; color: #4a2300; }
+    .chip.veg.active { background: #2b9348; border-color: #fff; color: #fff; }
+    .chip.nonveg.active { background: #7f1d1d; border-color: #fff; color: #fff; }
+
+    .card { background: #fff8ef; border-left: 5px solid #f4a261; }
+    .card.veg { background: #effaf0; border-left-color: #2b9348; }
+    .card.nonveg { background: #fff0f0; border-left-color: #c1121f; }
+    .item-name { color: #2d1b0e; }
+    .add-btn { background: #e85d04; }
+    .qty-btn { background: #ffd9b3; color: #9d0208; }
+
+    .cart-bar { background: #2b1b17; border-top: none; }
+    .cart-bar [data-i18n="total"] { color: #f5d0a9 !important; }
+    #totalPrice { color: #ffd166 !important; }
+    .order-btn:disabled { background-color: #6b5b55; color: #cdbfb8; }
+
+    /* ---------- Slide bar (scrollbar) chhupana ---------- */
+    html, body { overflow-x: hidden; }
+    .chips { scrollbar-width: none; -ms-overflow-style: none; }
+    .chips::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+    /* ---------- Chuna hua button saaf dikhe ---------- */
+    .lang-btn.active, .chip.active { background: #fff; color: #b5179e; border-color: #fff; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.28); }
+    .chip.veg.active { background: #fff; color: #2b9348; border-color: #fff; }
+    .chip.nonveg.active { background: #fff; color: #c1121f; border-color: #fff; }
+    .lang-btn.active::before, .chip.active::before { content: "\2713  "; }
+
+    /* ---------- Mere ऑर्डर (customer ne kya order kiya) ---------- */
+    .popup-card { max-height: 85vh; overflow-y: auto; }
+    .my-orders-btn { display: none; margin: 12px 16px 0; width: calc(100% - 32px); padding: 10px; border: 2px solid #e85d04; background: #fff; color: #c2410c; border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+    .o-card { background: #fff8ef; border: 1px solid #f4a261; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; text-align: left; }
+    .o-top { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; color: #7a4b1e; border-bottom: 1px dashed #f4a261; padding-bottom: 6px; margin-bottom: 6px; }
+    .o-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.95rem; color: #2d1b0e; padding: 2px 0; }
+    .o-total { display: flex; justify-content: space-between; font-weight: 700; color: #2b9348; border-top: 1px solid #f4a261; margin-top: 6px; padding-top: 6px; }
+    .o-empty { color: #666; text-align: center; padding: 12px 0; }
   </style>
 </head>
 <body>
@@ -26,7 +79,10 @@
         <button class="lang-btn" data-lang="pa">ਪੰਜਾਬੀ</button>
       </div>
     </div>
+    <div id="filters"></div>
   </header>
+
+  <button class="my-orders-btn" id="myOrdersBtn" onclick="openOrders()"></button>
 
   <div class="menu-container" id="menuContainer"></div>
 
@@ -42,7 +98,17 @@
     <div class="popup-card">
       <h2 style="color: #2b9348; margin-bottom: 8px;" data-i18n="placed"></h2>
       <p style="color: #555; font-size: 0.95rem; margin-bottom: 16px;" data-i18n="sent"></p>
+      <div id="lastOrder" style="margin-bottom: 14px;"></div>
       <button class="add-btn" style="width: 100%;" onclick="closePopup()" data-i18n="ok"></button>
+    </div>
+  </div>
+
+  <!-- मेरे ऑर्डर -->
+  <div class="success-popup" id="ordersPopup">
+    <div class="popup-card">
+      <h2 style="color: #e85d04; margin-bottom: 12px;" data-i18n="myOrders"></h2>
+      <div id="ordersList"></div>
+      <button class="add-btn" style="width: 100%; margin-top: 4px;" onclick="closeOrders()" data-i18n="close"></button>
     </div>
   </div>
 
@@ -51,16 +117,24 @@
       hi: { table: 'टेबल', total: 'कुल बिल:', order: 'ऑर्डर भेजें', add: '+ जोड़ें', ok: 'ठीक है',
             placed: 'ऑर्डर लग गया! 🎉', sent: 'आपका ऑर्डर काउंटर और किचन को भेज दिया गया है।',
             loading: 'मेनू लोड हो रहा है...', empty: 'मेनू खाली है।', failMenu: 'मेनू लोड नहीं हो पाया!',
-            failOrder: 'ऑर्डर भेजने में समस्या आई!', failServer: 'सर्वर से कनेक्ट नहीं हो सका!' },
+            failOrder: 'ऑर्डर भेजने में समस्या आई!', failServer: 'सर्वर से कनेक्ट नहीं हो सका!',
+            all: 'सभी', veg: 'वेज', nonveg: 'नॉन-वेज',
+            myOrders: 'मेरे ऑर्डर', noOrders: 'अभी कोई ऑर्डर नहीं', orderNo: 'ऑर्डर', close: 'बंद करें', starters: 'स्टार्टर्स', desserts: 'डेज़र्ट', drinks: 'ड्रिंक्स', main: 'मुख्य व्यंजन', fastfood: 'फास्ट फूड', rice: 'राइस', bread: 'रोटी / ब्रेड' },
       en: { table: 'Table', total: 'Total bill:', order: 'Place order', add: '+ Add', ok: 'OK',
             placed: 'Order placed! 🎉', sent: 'Your order has been sent to the counter and kitchen.',
             loading: 'Loading menu...', empty: 'Menu is empty.', failMenu: 'Could not load the menu!',
-            failOrder: 'There was a problem placing the order!', failServer: 'Could not connect to the server!' },
+            failOrder: 'There was a problem placing the order!', failServer: 'Could not connect to the server!',
+            all: 'All', veg: 'Veg', nonveg: 'Non-Veg',
+            myOrders: 'My orders', noOrders: 'No orders yet', orderNo: 'Order', close: 'Close', starters: 'Starters', desserts: 'Desserts', drinks: 'Drinks', main: 'Main Course', fastfood: 'Fast Food', rice: 'Rice', bread: 'Breads' },
       pa: { table: 'ਮੇਜ਼', total: 'ਕੁੱਲ ਬਿੱਲ:', order: 'ਆਰਡਰ ਭੇਜੋ', add: '+ ਜੋੜੋ', ok: 'ਠੀਕ ਹੈ',
             placed: 'ਆਰਡਰ ਲੱਗ ਗਿਆ! 🎉', sent: 'ਤੁਹਾਡਾ ਆਰਡਰ ਕਾਊਂਟਰ ਅਤੇ ਰਸੋਈ ਨੂੰ ਭੇਜ ਦਿੱਤਾ ਗਿਆ ਹੈ।',
             loading: 'ਮੀਨੂ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...', empty: 'ਮੀਨੂ ਖਾਲੀ ਹੈ।', failMenu: 'ਮੀਨੂ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ!',
-            failOrder: 'ਆਰਡਰ ਭੇਜਣ ਵਿੱਚ ਸਮੱਸਿਆ ਆਈ!', failServer: 'ਸਰਵਰ ਨਾਲ ਜੁੜ ਨਹੀਂ ਸਕੇ!' }
+            failOrder: 'ਆਰਡਰ ਭੇਜਣ ਵਿੱਚ ਸਮੱਸਿਆ ਆਈ!', failServer: 'ਸਰਵਰ ਨਾਲ ਜੁੜ ਨਹੀਂ ਸਕੇ!',
+            all: 'ਸਭ', veg: 'ਸ਼ਾਕਾਹਾਰੀ', nonveg: 'ਮਾਸਾਹਾਰੀ',
+            myOrders: 'ਮੇਰੇ ਆਰਡਰ', noOrders: 'ਅਜੇ ਕੋਈ ਆਰਡਰ ਨਹੀਂ', orderNo: 'ਆਰਡਰ', close: 'ਬੰਦ ਕਰੋ', starters: 'ਸਟਾਰਟਰ', desserts: 'ਮਿਠਾਈ', drinks: 'ਡਰਿੰਕਸ', main: 'ਮੁੱਖ ਪਕਵਾਨ', fastfood: 'ਫਾਸਟ ਫੂਡ', rice: 'ਚਾਵਲ', bread: 'ਰੋਟੀ / ਬਰੈੱਡ' }
     };
+
+    const CATS = ['starters', 'main', 'rice', 'bread', 'fastfood', 'desserts', 'drinks'];
 
     const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const urlParams = new URLSearchParams(window.location.search);
@@ -75,6 +149,10 @@
     let menuList = [];
     let cart = {};
     let menuState = 'loading'; // loading | ok | error
+    let catFilter = 'all';
+    let typeFilter = 'all';
+    // veg / non-veg ki patti (filter) nahi chahiye to false kar dein. Hare-laal nishaan phir bhi dikhenge.
+    const SHOW_VEG_FILTER = true;
 
     // डिश का नाम चुनी हुई भाषा में (खाली हो तो हिंदी नाम)
     function dishName(item) {
@@ -89,6 +167,7 @@
       document.getElementById('tableBadge').textContent = `${T('table')}: ${tableNo}`;
       document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
       renderMenu();
+      refreshOrderViews();
     }
 
     document.querySelectorAll('.lang-btn').forEach((b) => {
@@ -112,20 +191,58 @@
       renderMenu();
     }
 
+    // ऊपर की category और veg/non-veg वाली पट्टी (सिर्फ वही दिखती हैं जो मेनू में हैं)
+    function renderFilters() {
+      const bar = document.getElementById('filters');
+      if (menuState !== 'ok') { bar.innerHTML = ''; return; }
+
+      const presentCats = CATS.filter((c) => menuList.some((i) => i.category === c));
+      if (catFilter !== 'all' && !presentCats.includes(catFilter)) catFilter = 'all';
+
+      const chip = (group, val, cls) => {
+        const active = (group === 'cat' ? catFilter : typeFilter) === val;
+        return `<button class="chip ${cls || ''} ${active ? 'active' : ''}" onclick="setFilter('${group}', '${val}')">${esc(T(val))}</button>`;
+      };
+
+      let html = '';
+      if (presentCats.length) {
+        html += `<div class="chips">${chip('cat', 'all')}${presentCats.map((c) => chip('cat', c)).join('')}</div>`;
+      }
+      const hasType = menuList.some((i) => i.food_type === 'veg' || i.food_type === 'nonveg');
+      if (SHOW_VEG_FILTER && hasType) {
+        html += `<div class="chips">${chip('type', 'all')}${chip('type', 'veg', 'veg')}${chip('type', 'nonveg', 'nonveg')}</div>`;
+      }
+      bar.innerHTML = html;
+    }
+
+    function setFilter(group, val) {
+      if (group === 'cat') catFilter = val; else typeFilter = val;
+      renderMenu();
+    }
+
     function renderMenu() {
       const container = document.getElementById('menuContainer');
+      renderFilters();
+
       if (menuState === 'loading') { container.innerHTML = `<p style="text-align:center;color:#888;">${T('loading')}</p>`; updateCartBar(); return; }
       if (menuState === 'error') { container.innerHTML = `<p style="color:red;text-align:center;">${T('failMenu')}</p>`; return; }
-      if (menuList.length === 0) { container.innerHTML = `<p style="text-align:center;">${T('empty')}</p>`; updateCartBar(); return; }
+
+      const shown = menuList.filter((i) =>
+        (catFilter === 'all' || i.category === catFilter) &&
+        (typeFilter === 'all' || i.food_type === typeFilter)
+      );
+      if (shown.length === 0) { container.innerHTML = `<p style="text-align:center;">${T('empty')}</p>`; updateCartBar(); return; }
 
       container.innerHTML = '';
-      menuList.forEach((item) => {
+      shown.forEach((item) => {
         const qty = cart[item.id] || 0;
+        const dot = (item.food_type === 'veg' || item.food_type === 'nonveg')
+          ? `<span class="vdot ${item.food_type}"></span>` : '';
         const card = document.createElement('div');
-        card.className = 'card';
+        card.className = 'card' + (dot ? ' ' + item.food_type : '');
         card.innerHTML = `
           <div class="item-info">
-            <div class="item-name">${esc(dishName(item))}</div>
+            <div class="item-name">${dot}${esc(dishName(item))}</div>
             <div class="item-price">₹${item.price}</div>
           </div>
           <div>
@@ -170,11 +287,13 @@
       updateCartBar();
 
       const orderItems = [];
+      const recordItems = [];
       let totalAmount = 0;
       for (const id in cart) {
         const item = menuList.find((i) => i.id == id);
         if (item) {
           orderItems.push({ id: item.id, name: item.name, price: item.price, quantity: cart[id] });
+          recordItems.push({ id: item.id, name: item.name, name_en: item.name_en || '', name_pa: item.name_pa || '', price: Number(item.price), qty: cart[id] });
           totalAmount += item.price * cart[id];
         }
       }
@@ -186,8 +305,12 @@
           body: JSON.stringify({ restaurant_id: Number(restaurantId), table_no: tableNo, items: orderItems, total_amount: totalAmount })
         });
         if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          lastRecord = { id: data.orderId, time: new Date().toISOString(), total: totalAmount, items: recordItems };
+          saveMyOrder(lastRecord);
           cart = {};
           renderMenu();
+          refreshOrderViews();
           document.getElementById('successPopup').style.display = 'flex';
         } else {
           alert(T('failOrder'));
@@ -199,6 +322,70 @@
         updateCartBar();
       }
     }
+
+    // ---------- मेरे ऑर्डर: is phone par kiye gaye pichhle ऑर्डर ----------
+    const ORDERS_KEY = `myOrders_${restaurantId}_${tableNo}`;
+    const ORDERS_KEEP_MS = 6 * 60 * 60 * 1000; // 6 ghante
+    let lastRecord = null;
+
+    function loadMyOrders() {
+      try {
+        const list = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
+        return list.filter((o) => Date.now() - new Date(o.time).getTime() < ORDERS_KEEP_MS);
+      } catch (e) { return []; }
+    }
+
+    function saveMyOrder(order) {
+      try {
+        const list = loadMyOrders();
+        list.unshift(order);
+        localStorage.setItem(ORDERS_KEY, JSON.stringify(list.slice(0, 10)));
+      } catch (e) {}
+    }
+
+    function itemLabel(i) {
+      if (lang === 'en' && i.name_en) return i.name_en;
+      if (lang === 'pa' && i.name_pa) return i.name_pa;
+      return i.name;
+    }
+
+    function fmtTime(iso) {
+      return new Date(iso).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    function orderHtml(o) {
+      const rows = o.items.map((i) =>
+        `<div class="o-row"><span>${i.qty} x ${esc(itemLabel(i))}</span><span>₹${i.price * i.qty}</span></div>`
+      ).join('');
+      const idText = o.id !== undefined && o.id !== null ? ` #${esc(o.id)}` : '';
+      return `<div class="o-card">
+        <div class="o-top"><b>${T('orderNo')}${idText}</b><span>${fmtTime(o.time)}</span></div>
+        ${rows}
+        <div class="o-total"><span>${T('total')}</span><span>₹${o.total}</span></div>
+      </div>`;
+    }
+
+    function refreshOrderViews() {
+      const n = loadMyOrders().length;
+      const btn = document.getElementById('myOrdersBtn');
+      btn.style.display = n ? 'block' : 'none';
+      btn.textContent = `🧾 ${T('myOrders')} (${n})`;
+      if (lastRecord) document.getElementById('lastOrder').innerHTML = orderHtml(lastRecord);
+      if (document.getElementById('ordersPopup').style.display === 'flex') renderOrdersList();
+    }
+
+    function renderOrdersList() {
+      const list = loadMyOrders();
+      document.getElementById('ordersList').innerHTML =
+        list.length ? list.map(orderHtml).join('') : `<div class="o-empty">${T('noOrders')}</div>`;
+    }
+
+    function openOrders() {
+      renderOrdersList();
+      document.getElementById('ordersPopup').style.display = 'flex';
+    }
+
+    function closeOrders() { document.getElementById('ordersPopup').style.display = 'none'; }
 
     function closePopup() { document.getElementById('successPopup').style.display = 'none'; }
 
