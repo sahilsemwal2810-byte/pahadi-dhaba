@@ -1,38 +1,72 @@
-
 <!DOCTYPE html>
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>होटल QR कोड जनरेटर</title>
+  <title>QR Code Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Cinzel:wght@700&family=Lobster&family=Pacifico&family=Playfair+Display:wght@700&family=Poppins:wght@600;700&family=Rozha+One&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    body { font-family: sans-serif; background: #0f172a; color: #fff; padding: 20px; text-align: center; }
-    .controls { background: #1e293b; padding: 15px; border-radius: 10px; display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin-bottom: 12px; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #fff; padding: 20px; text-align: center; }
+    h1 { font-size: 1.4rem; margin-bottom: 14px; }
+    .controls { background: #1e293b; padding: 14px; border-radius: 12px; display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin-bottom: 12px; }
     .controls label { font-size: 0.95rem; }
-    input, button { padding: 10px 12px; font-size: 1rem; border-radius: 6px; border: none; }
+    input, button { padding: 10px 12px; font-size: 1rem; border-radius: 8px; border: none; font-family: inherit; }
     input { background: #334155; color: #fff; width: 90px; text-align: center; }
     button { background: #22c55e; color: #000; font-weight: bold; cursor: pointer; }
     button.secondary { background: #38bdf8; }
     #msg { min-height: 24px; margin-bottom: 14px; font-size: 0.95rem; color: #facc15; }
-    .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-    .card { background: #fff; color: #000; padding: 15px; border-radius: 10px; width: 200px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-    .card h3 { margin: 5px 0; font-size: 1.05rem; color: #1e293b; }
-    .card .tbl { margin: 2px 0 10px 0; font-size: 1.1rem; font-weight: bold; color: #b91c1c; }
-    .card .hint { margin-top: 8px; font-size: 0.75rem; color: #64748b; }
+    .grid { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; }
+
+    /* ---------- Colour options ---------- */
+    .palettes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin-bottom: 14px; }
+    .palettes .lbl { font-size: 0.9rem; color: #cbd5e1; margin-right: 2px; }
+    .pb { display: flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 20px; border: 2px solid transparent; background: #1e293b; color: #fff; font-size: 0.85rem; font-weight: 500; cursor: pointer; }
+    .pb.on { border-color: #fff; }
+    .sw { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
+    .custom { display: none; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; font-size: 0.85rem; color: #cbd5e1; }
+    .custom input[type=color] { width: 44px; height: 34px; padding: 2px; border-radius: 6px; background: #334155; cursor: pointer; }
+
+    /* ---------- Table card ---------- */
+    .card { width: 240px; border-radius: 20px; overflow: hidden; background: var(--bg, #fff6e8); color: #2d1b0e; box-shadow: 0 10px 28px rgba(0,0,0,.35); text-align: center; page-break-inside: avoid; break-inside: avoid; }
+    .top { padding: 20px 12px 28px; color: #fff;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(255,255,255,.20) 0 38px, transparent 39px),
+        radial-gradient(circle at 92% 85%, rgba(255,255,255,.15) 0 56px, transparent 57px),
+        linear-gradient(135deg, var(--g1, #b5179e) 0%, var(--g2, #e63946) 55%, var(--g3, #f77f00) 100%); }
+    .orn { font-size: 0.7rem; letter-spacing: 6px; opacity: .85; margin-bottom: 6px; }
+    .hn { font-family: var(--hf, Georgia, "Times New Roman", serif); font-size: 1.45rem; font-weight: var(--hw, 700); letter-spacing: .5px; line-height: 1.2; }
+    .pillwrap { margin-top: -17px; position: relative; z-index: 1; }
+    .pill { display: inline-block; background: #fff; color: var(--pc, #b5179e); border: 2px solid var(--bd, #ffd166); border-radius: 30px; padding: 5px 22px; font-size: 1rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,.15); }
+    .pill b { font-size: 1.5rem; margin-left: 6px; color: var(--acc, #e63946); }
+    .body { padding: 16px 16px 12px; }
+    .frame { position: relative; display: inline-block; padding: 14px; background: #fff; border-radius: 14px; }
+    .frame i { position: absolute; width: 24px; height: 24px; border: 3px solid var(--acc, #e63946); }
+    .frame .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 14px; }
+    .frame .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 14px; }
+    .frame .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 14px; }
+    .frame .br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
     .qr-box { display: flex; justify-content: center; }
+    .qr-box img, .qr-box canvas { display: block; }
+    .scan { margin-top: 14px; font-size: 1.05rem; font-weight: 700; color: #2d1b0e; }
+    .sub { margin-top: 3px; font-size: 0.78rem; color: #7a4b1e; }
+    .foot { margin: 0 14px 14px; padding-top: 9px; border-top: 1px dashed var(--bd, #f4a261); font-size: 0.72rem; color: #9a6a3a; letter-spacing: .3px; }
 
     @media print {
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       body { background: #fff; padding: 0; }
-      .controls, #msg, h1 { display: none !important; }
-      .grid { gap: 12px; }
-      .card { box-shadow: none; border: 1px solid #000; page-break-inside: avoid; }
+      .controls, #msg, h1, .palettes, .custom { display: none !important; }
+      .grid { gap: 14px; }
+      .card { box-shadow: none; border: 1px solid #d6c3a5; }
     }
   </style>
 </head>
 <body>
 
-  <h1>📱 टेबल QR कोड जनरेटर</h1>
+  <h1>Table QR Code Generator</h1>
 
   <div class="controls">
     <label>होटल ID: <input type="number" id="hotelId" min="1" value="1"></label>
@@ -40,6 +74,13 @@
     <button onclick="renderQRCodes()">QR कोड दिखाएँ</button>
     <button class="secondary" onclick="window.print()">🖨️ प्रिंट करें</button>
   </div>
+  <div class="palettes" id="palettes"></div>
+  <div class="custom" id="customBox">
+    <label>Header start <input type="color" id="cStart" value="#0f766e"></label>
+    <label>Header end <input type="color" id="cEnd" value="#facc15"></label>
+    <label>Accent <input type="color" id="cAcc" value="#0f766e"></label>
+  </div>
+  <div class="palettes" id="fonts"></div>
   <div id="msg"></div>
 
   <div class="grid" id="qrContainer"></div>
@@ -61,8 +102,8 @@
         return;
       }
 
-      // होटल का नाम सर्वर से (नाम खुद टाइप करने की ज़रूरत नहीं)
-      let restaurantName = 'होटल ' + restaurantId;
+      // होटल का नाम सर्वर से
+      let restaurantName = 'Hotel ' + restaurantId;
       try {
         const res = await fetch(`/api/menu?restaurant=${restaurantId}`);
         const data = await res.json();
@@ -80,29 +121,128 @@
 
         const card = document.createElement('div');
         card.className = 'card';
-
-        const title = document.createElement('h3');
-        title.textContent = restaurantName;
-
-        const tableText = document.createElement('div');
-        tableText.className = 'tbl';
-        tableText.textContent = `टेबल नंबर: ${table}`;
-
-        const qrDiv = document.createElement('div');
-        qrDiv.className = 'qr-box';
-
-        const hint = document.createElement('div');
-        hint.className = 'hint';
-        hint.textContent = 'स्कैन करें और ऑर्डर करें';
-
-        card.append(title, tableText, qrDiv, hint);
+        card.innerHTML = `
+          <div class="top">
+            <div class="orn">&#10022; &#10022; &#10022;</div>
+            <div class="hn"></div>
+          </div>
+          <div class="pillwrap"><span class="pill">टेबल <b>${table}</b></span></div>
+          <div class="body">
+            <div class="frame">
+              <i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i>
+              <div class="qr-box"></div>
+            </div>
+            <div class="scan">स्कैन करें और ऑर्डर करें</div>
+            <div class="sub">Scan &amp; Order &nbsp;&middot;&nbsp; ਸਕੈਨ ਕਰੋ ਤੇ ਆਰਡਰ ਕਰੋ</div>
+          </div>
+          <div class="foot">Point your phone camera at the QR</div>
+        `;
+        card.querySelector('.hn').textContent = restaurantName;
         container.appendChild(card);
 
-        new QRCode(qrDiv, { text: targetUrl, width: 160, height: 160 });
+        new QRCode(card.querySelector('.qr-box'), { text: targetUrl, width: 150, height: 150 });
       }
     }
 
-    // पेज खुलते ही होटल 1 के QR
+    // ---------- Colour options ----------
+    const PALETTES = [
+      { n: 'Berry',         g: ['#b5179e', '#e63946', '#f77f00'], acc: '#e63946', pc: '#b5179e', bg: '#fff6e8', bd: '#ffd166' },
+      { n: 'Emerald',       g: ['#064e3b', '#059669', '#34d399'], acc: '#047857', pc: '#065f46', bg: '#effaf3', bd: '#a7f3d0' },
+      { n: 'Ocean Blue',    g: ['#0c4a6e', '#0284c7', '#38bdf8'], acc: '#0369a1', pc: '#075985', bg: '#eef7fd', bd: '#bae6fd' },
+      { n: 'Royal Maroon',  g: ['#5c0a1a', '#9d1b32', '#d4a017'], acc: '#9d1b32', pc: '#7a1228', bg: '#fdf6e3', bd: '#e9c46a' },
+      { n: 'Midnight Gold', g: ['#0f172a', '#1e293b', '#b8860b'], acc: '#b8860b', pc: '#0f172a', bg: '#f8f5ee', bd: '#d4af37' },
+      { n: 'Sunset Orange', g: ['#c2410c', '#f97316', '#fbbf24'], acc: '#c2410c', pc: '#9a3412', bg: '#fff7ed', bd: '#fed7aa' }
+    ];
+    let palIdx = 0; // PALETTES.length = Custom
+    let custom = { c1: '#0f766e', c2: '#facc15', acc: '#0f766e' };
+
+    function mixHex(a, b) {
+      const p = (h) => [1, 3, 5].map((i) => parseInt(h.substr(i, 2), 16));
+      const x = p(a), y = p(b);
+      return '#' + x.map((v, i) => Math.round((v + y[i]) / 2).toString(16).padStart(2, '0')).join('');
+    }
+
+    function currentPalette() {
+      if (palIdx >= PALETTES.length) {
+        return { g: [custom.c1, mixHex(custom.c1, custom.c2), custom.c2], acc: custom.acc, pc: custom.acc, bg: '#fff6e8', bd: '#ffd166' };
+      }
+      return PALETTES[palIdx];
+    }
+
+    function applyPalette() {
+      const p = currentPalette();
+      const st = document.getElementById('qrContainer').style;
+      st.setProperty('--g1', p.g[0]); st.setProperty('--g2', p.g[1]); st.setProperty('--g3', p.g[2]);
+      st.setProperty('--acc', p.acc); st.setProperty('--pc', p.pc);
+      st.setProperty('--bg', p.bg);   st.setProperty('--bd', p.bd);
+      document.querySelectorAll('.pb').forEach((b, i) => b.classList.toggle('on', i === palIdx));
+      document.getElementById('customBox').style.display = palIdx >= PALETTES.length ? 'flex' : 'none';
+      try { localStorage.setItem('qrPalette', JSON.stringify({ palIdx, custom })); } catch (e) {}
+    }
+
+    function setPalette(i) { palIdx = i; applyPalette(); }
+
+    function buildPaletteBar() {
+      const bar = document.getElementById('palettes');
+      bar.innerHTML = '<span class="lbl">Colour:</span>' +
+        PALETTES.map((p, i) => `<button class="pb" onclick="setPalette(${i})"><span class="sw" style="background:linear-gradient(135deg,${p.g[0]},${p.g[2]})"></span>${p.n}</button>`).join('') +
+        `<button class="pb" onclick="setPalette(${PALETTES.length})"><span class="sw" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"></span>Custom</button>`;
+
+      [['cStart', 'c1'], ['cEnd', 'c2'], ['cAcc', 'acc']].forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        el.value = custom[key];
+        el.addEventListener('input', () => { custom[key] = el.value; palIdx = PALETTES.length; applyPalette(); });
+      });
+    }
+
+    function loadPalette() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('qrPalette') || 'null');
+        if (saved) {
+          if (Number.isInteger(saved.palIdx) && saved.palIdx >= 0 && saved.palIdx <= PALETTES.length) palIdx = saved.palIdx;
+          if (saved.custom) custom = Object.assign(custom, saved.custom);
+        }
+      } catch (e) {}
+      buildPaletteBar();
+      applyPalette();
+    }
+
+    // ---------- Font options (hotel ka naam) ----------
+    const FONTS = [
+      { n: 'Classic',  f: 'Georgia, "Times New Roman", serif',        w: 700 },
+      { n: 'Elegant',  f: '"Playfair Display", Georgia, serif',       w: 700 },
+      { n: 'Royal',    f: 'Cinzel, Georgia, serif',                   w: 700 },
+      { n: 'Script',   f: 'Pacifico, cursive',                        w: 400 },
+      { n: 'Bold Script', f: 'Lobster, cursive',                      w: 400 },
+      { n: 'Modern',   f: 'Poppins, "Segoe UI", sans-serif',          w: 700 },
+      { n: 'Friendly', f: '"Baloo 2", "Segoe UI", sans-serif',        w: 700 },
+      { n: 'हिंदी Bold', f: '"Rozha One", Georgia, serif',            w: 400 }
+    ];
+    let fontIdx = 0;
+
+    function applyFont() {
+      const st = document.getElementById('qrContainer').style;
+      st.setProperty('--hf', FONTS[fontIdx].f);
+      st.setProperty('--hw', FONTS[fontIdx].w);
+      document.querySelectorAll('#fonts .pb').forEach((b, i) => b.classList.toggle('on', i === fontIdx));
+      try { localStorage.setItem('qrFont', String(fontIdx)); } catch (e) {}
+    }
+
+    function setFont(i) { fontIdx = i; applyFont(); }
+
+    function loadFont() {
+      try {
+        const saved = Number(localStorage.getItem('qrFont'));
+        if (Number.isInteger(saved) && saved >= 0 && saved < FONTS.length) fontIdx = saved;
+      } catch (e) {}
+      document.getElementById('fonts').innerHTML = '<span class="lbl">Font:</span>' +
+        FONTS.map((p, i) => `<button class="pb" style="font-family:${p.f.replace(/"/g, '&quot;')}" onclick="setFont(${i})">${p.n}</button>`).join('');
+      applyFont();
+    }
+
+    // पेज खुलते ही रंग, font और होटल 1 के QR
+    loadPalette();
+    loadFont();
     renderQRCodes();
   </script>
 </body>
