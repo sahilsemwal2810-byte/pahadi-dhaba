@@ -1,158 +1,218 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&display=swap');
+
+/* QR मेनू: हरा-प्राकृतिक थीम (पाइन हरा + केसरिया पीला) */
+:root {
+  --pine: #1c4a35;
+  --pine-deep: #123324;
+  --sage: #f3f6ee;
+  --sage-line: #dde6d3;
+  --sage-soft: #e4ecdb;
+  --saffron: #f2a900;
+  --ink: #22301f;
+  --muted: #6b7a63;
 }
 
-body {
-  background-color: #f7f8fa;
-  color: #333;
-  padding-bottom: 90px;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html body {
+  font-family: "Mukta", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Devanagari", "Noto Sans Gurmukhi", sans-serif;
+  background: var(--sage);
+  color: var(--ink);
+  padding-bottom: 120px;
+  -webkit-tap-highlight-color: transparent;
 }
 
-header {
-  background: #ffffff;
-  padding: 16px 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+/* ---------- हेडर ---------- */
+html body header {
   position: sticky;
   top: 0;
-  z-index: 100;
-  
+  z-index: 20;
+  padding: 16px 16px 16px;
+  background: var(--pine);
+  border-radius: 0 0 22px 22px;
+  box-shadow: 0 6px 18px rgba(18, 51, 36, 0.25);
 }
-
-.restaurant-title {
-  font-size: 1.3rem;
+html body .restaurant-title {
+  color: #fdf8ea;
+  font-size: 1.65rem;
   font-weight: 700;
-  color: #e63946;
+  line-height: 1.15;
+  letter-spacing: 0.2px;
 }
-
-.table-badge {
+html body .table-badge {
   display: inline-block;
-  margin-top: 4px;
-  font-size: 0.85rem;
-  background: #e9ecef;
-  padding: 3px 8px;
-  border-radius: 6px;
-  color: #495057;
-  font-weight: 600;
+  margin-top: 7px;
+  padding: 3px 12px;
+  border-radius: 12px;
+  background: var(--saffron);
+  color: var(--pine-deep);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
+/* भाषा और फ़िल्टर बटन */
+html body .lang-btn,
+html body .chip {
+  background: transparent;
+  border: 1px solid rgba(253, 248, 234, 0.4);
+  color: #fdf8ea;
+  font-family: inherit;
+  font-weight: 600;
+  box-shadow: none;
+}
+html body .lang-btn.active,
+html body .chip.active {
+  background: #fdf8ea;
+  border-color: #fdf8ea;
+  color: var(--pine);
+  font-weight: 700;
+  box-shadow: none;
+}
+html body .chip.veg.active { background: #fdf8ea; color: #2b8a3e; border-color: #fdf8ea; }
+html body .chip.nonveg.active { background: #fdf8ea; color: #c1121f; border-color: #fdf8ea; }
+
+/* ---------- डिश की सूची ---------- */
 .menu-container {
-  padding: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px 14px 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-.card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 14px;
+html body .card,
+html body .card.veg,
+html body .card.nonveg {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  gap: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid var(--sage-line);
+  border-left: 1px solid var(--sage-line);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(28, 74, 53, 0.06);
 }
-
-.item-info {
-  flex: 1;
-  padding-right: 12px;
-}
-
-.item-name {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.item-price {
-  font-size: 0.95rem;
-  color: #2b9348;
-  font-weight: bold;
-}
-
-.add-btn {
-  background-color: #e63946;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.add-btn:active {
-  transform: scale(0.96);
-}
-
-.qty-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.qty-btn {
-  background: #e9ecef;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+.item-info { flex: 1; min-width: 0; }
+html body .item-name {
+  color: var(--ink);
   font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+html body .item-price {
+  margin-top: 3px;
+  color: var(--pine);
+  font-size: 1rem;
+  font-weight: 700;
 }
 
-.cart-bar {
+/* ---------- बटन ---------- */
+html body .add-btn {
+  border: none;
+  background: var(--pine);
+  color: #fff;
+  min-height: 42px;
+  padding: 9px 20px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+html body .add-btn:active { transform: scale(0.97); }
+
+.qty-controls { display: flex; align-items: center; gap: 12px; font-size: 1.05rem; }
+html body .qty-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: var(--sage-soft);
+  color: var(--pine);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+html body .qty-btn:active { transform: scale(0.95); }
+
+/* ---------- मेरे ऑर्डर ---------- */
+html body .my-orders-btn {
+  max-width: 648px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 14px;
+  background: #fff;
+  border: 1.5px solid var(--pine);
+  color: var(--pine);
+  font-family: inherit;
+}
+html body .o-card { background: #fff; border-color: var(--sage-line); }
+html body .o-top { color: var(--muted); border-bottom-color: var(--sage-line); }
+html body .o-row { color: var(--ink); }
+html body .o-total { color: var(--pine); border-top-color: var(--sage-line); }
+
+/* ---------- नीचे का कार्ट बार ---------- */
+html body .cart-bar {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
-  background: #fff;
-  border-top: 1px solid #e9ecef;
-  padding: 14px 20px;
+  bottom: 0;
+  z-index: 30;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.08);
+  gap: 12px;
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--pine-deep);
+  border-top: none;
+  border-radius: 20px 20px 0 0;
 }
-
-.order-btn {
-  background-color: #2b9348;
-  color: white;
+html body .cart-bar [data-i18n="total"] { color: #bcd0c2 !important; }
+html body #totalPrice { color: var(--saffron) !important; font-size: 1.35rem !important; }
+html body .order-btn {
   border: none;
-  padding: 12px 22px;
-  border-radius: 8px;
+  background: var(--saffron);
+  color: var(--pine-deep);
+  min-height: 48px;
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-family: inherit;
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
 }
+html body .order-btn:disabled { background-color: #3d5a4a; color: #9bb3a4; cursor: not-allowed; }
 
-.order-btn:disabled {
-  background-color: #adb5bd;
-  cursor: not-allowed;
-}
-
+/* ---------- पॉपअप ---------- */
 .success-popup {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  justify-content: center;
+  inset: 0;
+  z-index: 100;
   align-items: center;
-  padding: 20px;
-  z-index: 200;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(18, 51, 36, 0.6);
 }
-
-.popup-card {
-  background: white;
-  border-radius: 14px;
-  padding: 24px;
-  text-align: center;
-  max-width: 320px;
+html body .popup-card {
   width: 100%;
+  max-width: 400px;
+  padding: 22px;
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+}
+html body .popup-card h2 { color: var(--pine) !important; }
+
+@media (min-width: 700px) {
+  html body header { padding-left: calc(50% - 340px); padding-right: calc(50% - 340px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
 }
