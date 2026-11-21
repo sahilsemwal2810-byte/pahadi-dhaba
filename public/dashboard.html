@@ -641,8 +641,25 @@
       setTimeout(() => { btn.textContent = 'सेव'; }, 1500);
     }
 
-    function completeOrder(orderId) {
+    async function completeOrder(orderId) {
       const card = document.getElementById(`order-${orderId}`);
+      const btn = card && card.querySelector('.btn-done');
+      if (btn) btn.disabled = true;
+
+      // सर्वर को बताओ कि ऑर्डर पूरा हुआ (ग्राहक की "मेरे ऑर्डर" सूची से हटाने के लिए)
+      try {
+        const res = await fetch(`/api/orders/${orderId}/complete`, {
+          method: 'PUT',
+          headers: authHeaders()
+        });
+        if (res.status === 401) return goLogin();
+        if (!res.ok) throw new Error('complete failed');
+      } catch (e) {
+        if (btn) btn.disabled = false;
+        alert('ऑर्डर पूरा नहीं हो पाया, दोबारा कोशिश करें!');
+        return;
+      }
+
       if (card) {
         card.style.opacity = '0.4';
         card.style.border = '1px solid #475569';

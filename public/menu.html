@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Smart QR Menu</title>
   <link rel="stylesheet" href="menu.css" />
+  <script src="/socket.io/socket.io.js"></script>
   <style>
     .head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .langs { display: flex; gap: 6px; }
@@ -308,6 +309,7 @@
           const data = await res.json().catch(() => ({}));
           lastRecord = { id: data.orderId, time: new Date().toISOString(), total: totalAmount, items: recordItems };
           saveMyOrder(lastRecord);
+          watchOrder(data.orderId); // किचन में "पूरा हुआ" होने की खबर सुनना शुरू
           cart = {};
           renderMenu();
           refreshOrderViews();
@@ -389,8 +391,44 @@
 
     function closePopup() { document.getElementById('successPopup').style.display = 'none'; }
 
+    // ---------- किचन में "पूरा हुआ" होते ही ऑर्डर "मेरे ऑर्डर" से हटाना ----------
+    function removeOrders(ids) {
+      if (!ids.length) return;
+      try {
+        const drop = ids.map(String);
+        const list = loadMyOrders().filter((o) => !drop.includes(String(o.id)));
+        localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
+      } catch (e) {}
+      refreshOrderViews();
+    }
+
+    // सर्वर से पूछो: मेरे कौन-से ऑर्डर पूरे हो चुके हैं
+    async function checkDoneOrders() {
+      const ids = loadMyOrders().map((o) => o.id).filter((id) => id !== undefined && id !== null);
+      if (!ids.length) return;
+      try {
+        const res = await fetch(`/api/orders/status?ids=${ids.join(',')}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        removeOrders(data.done || []);
+      } catch (e) {}
+    }
+
+    // लाइव खबर (socket) — तुरंत हटाने के लिए
+    const socket = typeof io === 'function' ? io() : null;
+    function watchOrder(id) { if (socket && id) socket.emit('join_orders', [id]); }
+    if (socket) {
+      socket.on('connect', () => {
+        socket.emit('join_orders', loadMyOrders().map((o) => o.id).filter(Boolean));
+        checkDoneOrders();
+      });
+      socket.on('order_done', (d) => removeOrders([d.id]));
+    }
+    setInterval(checkDoneOrders, 30000); // बैकअप: हर 30 सेकंड में जाँच
+
     applyLang();
     fetchMenu();
+    checkDoneOrders();
   </script>
 </body>
 </html>

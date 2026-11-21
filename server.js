@@ -321,13 +321,65 @@ app.post('/api/orders', (req, res) => {
   });
 });
 
+// ---------- 3. Order पूरा होना (dashboard "✓ पूरा हुआ") ----------
+app.put('/api/orders/:id/complete', requireAuth, (req, res) => {
+  const orderId = Number(req.params.id);
+  if (!orderId) return res.status(400).json({ error: 'Order ID sahi nahi hai' });
+
+  // restaurant_id check: koi dusre hotel ka order poora nahi kar sakta
+  db.query(
+    "UPDATE orders SET status = 'Done' WHERE id = ? AND restaurant_id = ?",
+    [orderId, req.restaurantId],
+    (err, result) => {
+      if (err) {
+        console.error('Order complete error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Order nahi mila' });
+      }
+      // Customer ke phone ko turant batao (menu.html "मेरे ऑर्डर" se hata dega)
+      io.to(`order_${orderId}`).emit('order_done', { id: orderId });
+      res.json({ success: true });
+    }
+  );
+});
+
+// Customer ka phone puchhta hai: mere kaun-se orders poore ho chuke hain
+app.get('/api/orders/status', (req, res) => {
+  const ids = String(req.query.ids || '')
+    .split(',')
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n > 0)
+    .slice(0, 20);
+  if (!ids.length) return res.json({ done: [] });
+
+  db.query("SELECT id FROM orders WHERE id IN (?) AND status = 'Done'", [ids], (err, rows) => {
+    if (err) {
+      console.error('Order status error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json({ done: rows.map((r) => r.id) });
+  });
+});
+
 // ---------- Socket.io ----------
 io.on('connection', (socket) => {
-  console.log('⚡ Dashboard connected:', socket.id);
+  console.log('⚡ Client connected:', socket.id);
 
+  // Dashboard: apne hotel ka room
   socket.on('join_restaurant', (id) => {
     const rid = Number(id);
     if (rid) socket.join(`restaurant_${rid}`);
+  });
+
+  // Customer (menu.html): apne orders ke rooms
+  socket.on('join_orders', (ids) => {
+    if (!Array.isArray(ids)) return;
+    ids.slice(0, 20).forEach((id) => {
+      const n = Number(id);
+      if (Number.isInteger(n) && n > 0) socket.join(`order_${n}`);
+    });
   });
 });
 
