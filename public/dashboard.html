@@ -231,7 +231,7 @@
   <!-- थर्मल KOT प्रिंटिंग कंटेनर -->
   <div id="printArea" style="display: none;"></div>
 
-  <script> 
+  <script>
   // 1. चेक करें कि होटल लॉगिन है या नहीं
   const restaurantId = sessionStorage.getItem('restaurant_id');
   const restaurantName = sessionStorage.getItem('restaurant_name');
@@ -243,14 +243,22 @@
     window.location.href = '/login.html';
   }
 
+  // HTML escape: ग्राहक के भेजे नाम/टेबल से XSS रोकने के लिए
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
   // हेडर पर होटल का नाम सेट करना
   const headerBrand = document.querySelector('.brand');
   if (headerBrand && restaurantName) {
     headerBrand.innerText = `${restaurantName} - लाइव किचन डैशबोर्ड`;
   }
-    const socket = io();
-// connect (aur reconnect) hone par room join karein
-socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
+
+  const socket = io();
+  // connect (aur reconnect) hone par room join karein
+  socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
 
     // ऑटो-प्रिंट: चालू/बंद (याद रखा जाता है)
     let autoPrint = true;
@@ -270,9 +278,12 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
     renderAutoPrintBadge();
 
     // बीप साउंड जेनरेटर (Web Audio API)
+    // एक ही AudioContext दोबारा इस्तेमाल होता है (कई ऑर्डर आने पर ब्राउज़र लिमिट से बचने के लिए)
+    let audioCtx = null;
     function playBeep() {
       try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = "sine";
@@ -291,8 +302,75 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
     socket.on('new_order', (order) => {
       playBeep();
       addOrderCard(order);
-      if (autoPrint) printKOT(order);
+      if (autoPrint) queuePrint(order);
     });
+
+    // ---------- प्रिंट क्यू: एक-एक करके पर्ची ----------
+    const PRINT_GAP_MS = 1500;   // दो पर्चियों के बीच का गैप (धीमा प्रिंटर हो तो 2500-3000 करें)
+    const printQueue = [];
+    let printing = false;
+    const ordersById = {};       // "पर्ची" बटन के लिए ऑर्डर याद रखना
+
+    function formatTime(order) {
+      const opts = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+      if (order.time) return order.time;
+      if (order.created_at) return new Date(order.created_at).toLocaleTimeString('en-IN', opts);
+      return new Date().toLocaleTimeString('en-IN', opts);
+    }
+
+    function buildKOTHtml(order) {
+      let itemsText = '';
+      order.items.forEach(item => {
+        itemsText += `
+          <div style="display:flex; justify-content:space-between; margin:3px 0;">
+            <span>${esc(item.quantity)}x ${esc(item.name)}</span>
+            <span>₹${esc(item.price * item.quantity)}</span>
+          </div>`;
+      });
+      return `
+        <div style="text-align:center; font-weight:bold; font-size:16px;">${esc(restaurantName)}</div>
+        <div style="text-align:center; margin-bottom:5px;">--- KOT पर्ची ---</div>
+        <div><strong>टेबल नं:</strong> ${esc(order.table_no)}</div>
+        <div><strong>ऑर्डर ID:</strong> #${esc(order.id)}</div>
+        <div><strong>समय:</strong> ${esc(formatTime(order))}</div>
+        <hr style="border:none; border-top:1px dashed #000; margin:6px 0;" />
+        ${itemsText}
+        <hr style="border:none; border-top:1px dashed #000; margin:6px 0;" />
+        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px;">
+          <span>कुल राशि:</span><span>₹${esc(order.total_amount)}</span>
+        </div>
+        <div style="text-align:center; margin-top:8px; font-size:11px;">धन्यवाद! पुनः पधारें</div>`;
+    }
+
+    function queuePrint(order) {
+      printQueue.push(order);
+      processQueue();
+    }
+
+    function processQueue() {
+      if (printing || printQueue.length === 0) return;
+      printing = true;
+      const order = printQueue.shift();
+
+      const printBox = document.getElementById('printArea');
+      printBox.innerHTML = buildKOTHtml(order);
+      printBox.style.display = 'block';
+
+      // थोड़ा रुककर प्रिंट करें ताकि कंटेंट पूरी तरह बन जाए
+      setTimeout(() => {
+        try {
+          window.print();
+        } catch (e) {
+          console.error('Print error:', e);
+        }
+        printBox.style.display = 'none';
+        // अगली पर्ची के लिए गैप
+        setTimeout(() => {
+          printing = false;
+          processQueue();
+        }, PRINT_GAP_MS);
+      }, 300);
+    }
 
     let hasOrders = false;
 
@@ -303,6 +381,8 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
         hasOrders = true;
       }
 
+      ordersById[order.id] = order;
+
       const card = document.createElement('div');
       card.className = 'order-card';
       card.id = `order-${order.id}`;
@@ -311,8 +391,8 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
       order.items.forEach(item => {
         itemsHtml += `
           <li class="item-row">
-            <span><span class="item-qty">${item.quantity}x</span> ${item.name}</span>
-            <span>₹${item.price * item.quantity}</span>
+            <span><span class="item-qty">${esc(item.quantity)}x</span> ${esc(item.name)}</span>
+            <span>₹${esc(item.price * item.quantity)}</span>
           </li>
         `;
       });
@@ -320,59 +400,27 @@ socket.on('connect', () => socket.emit('join_restaurant', restaurantId));
       card.innerHTML = `
         <div>
           <div class="card-top">
-            <span class="table-tag">टेबल: ${order.table_no}</span>
-            <span class="order-time">${order.time || 'अभी'} | #${order.id}</span>
+            <span class="table-tag">टेबल: ${esc(order.table_no)}</span>
+            <span class="order-time">${esc(order.time || 'अभी')} | #${esc(order.id)}</span>
           </div>
           <ul class="items-list">
             ${itemsHtml}
           </ul>
         </div>
         <div class="card-bottom">
-          <div class="total-price">₹${order.total_amount}</div>
+          <div class="total-price">₹${esc(order.total_amount)}</div>
           <div class="btn-group">
-            <button class="btn btn-print" onclick='printKOT(${JSON.stringify(order)})'>🖨️ पर्ची</button>
-            <button class="btn btn-done" onclick="completeOrder(${order.id})">✓ पूरा हुआ</button>
+            <button class="btn btn-print">🖨️ पर्ची</button>
+            <button class="btn btn-done">✓ पूरा हुआ</button>
           </div>
         </div>
       `;
+
+      // inline onclick की जगह listener (ऑर्डर डेटा HTML में नहीं डालना पड़ता)
+      card.querySelector('.btn-print').addEventListener('click', () => queuePrint(order));
+      card.querySelector('.btn-done').addEventListener('click', () => completeOrder(order.id));
 
       grid.prepend(card);
-    }
-
-    // 58mm KOT थर्मल पर्ची प्रिंट
-    function printKOT(order) {
-      const printBox = document.getElementById('printArea');
-      printBox.style.display = 'block';
-
-      let itemsText = '';
-      order.items.forEach(item => {
-        itemsText += `
-          <div style="display:flex; justify-content:space-between; margin: 3px 0;">
-            <span>${item.quantity}x ${item.name}</span>
-            <span>₹${item.price * item.quantity}</span>
-          </div>
-        `;
-      });
-
-      printBox.innerHTML = `
-        <div style="text-align:center; font-weight:bold; font-size:16px;">${String(restaurantName || '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</div>
-        <div style="text-align:center; margin-bottom: 5px;">--- KOT पर्ची ---</div>
-        <div><strong>टेबल नं:</strong> ${order.table_no}</div>
-        <div><strong>ऑर्डर ID:</strong> #${order.id}</div>
-        
-        <div><strong>समय:</strong> ${order.time || (order.created_at ? new Date(order.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }))}</div>
-        <hr style="border:none; border-top:1px dashed #000; margin: 6px 0;" />
-        ${itemsText}
-        <hr style="border:none; border-top:1px dashed #000; margin: 6px 0;" />
-        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px;">
-          <span>कुल राशि:</span>
-          <span>₹${order.total_amount}</span>
-        </div>
-        <div style="text-align:center; margin-top:8px; font-size:11px;">धन्यवाद! पुनः पधारें</div>
-      `;
-
-      window.print();
-      printBox.style.display = 'none';
     }
 
     // ---------- मेनू मैनेज: price और available ----------
